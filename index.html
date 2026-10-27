@@ -1702,7 +1702,98 @@ async function summaryExportPng(){
 }
 $('roundButton').onclick=()=>choose('round');$('terrorButton').onclick=()=>choose('terror');$('mapButton').onclick=()=>choose('map');$('closeSelector').onclick=()=>{selector=null;$('selector').classList.remove('open')};for(const id of ['survived','players','newPlayers'])$(id).addEventListener('input',readCounts);$('addEntry').onclick=commit;$('cancelEdit').onclick=clearForm;$('search').oninput=renderRecords;
 $('addSession').onclick=()=>{let s={id:uid(),name:'周回 '+(state.sessions.length+1),records:[]};state.sessions.push(s);state.active=s.id;persist();clearForm();renderSessions()};$('deleteSession').onclick=()=>{if(state.sessions.length===1){notify('最後の周回は削除できません');return}if(!confirm('この周回と含まれる成果を削除しますか？'))return;state.sessions=state.sessions.filter(s=>s.id!==state.active);state.active=state.sessions[0].id;persist();clearForm();renderSessions()};$('session').onchange=e=>{state.active=e.target.value;clearForm();persist();renderSessions()};$('sessionName').onchange=e=>{let s=e.target.value.trim();if(!s){e.target.value=current().name;return}current().name=s;persist();renderSessions()};$('listView').onclick=()=>{state.mode='text';persist();renderRecords()};$('iconView').onclick=()=>{state.mode='icon';persist();renderRecords()};
-$('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'ton-round-records-web',version:1,exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ToN-Records-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};$('importButton').onclick=()=>$('importFile').click();$('importFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>5e6)throw Error('ファイルが大きすぎます');const obj=JSON.parse(await file.text());const data=obj.app==='ton-round-records-web'?obj.data:obj;if(!data||!Array.isArray(data.sessions)||!data.sessions.length||data.sessions.some(s=>typeof s.id!=='string'||typeof s.name!=='string'||!Array.isArray(s.records)||s.records.some(r=>typeof r.id!=='string'||typeof r.round!=='string')))throw Error('形式が異なります');if(!confirm('現在のブラウザ内の記録を読み込んだデータで置き換えます。続けますか？'))return;state=data;state.active=state.sessions.some(s=>s.id===state.active)?state.active:state.sessions[0].id;state.mode=state.mode==='icon'?'icon':'text';persist();clearForm();renderSessions();notify('読み込みました')}catch(err){notify('読み込み失敗: '+err.message)}finally{e.target.value=''}};
+
+/* Backward-compatible importer for the original .NET ToNRoundRecords DataFile.
+   Never rewrite the source file; convert a copy only after user confirmation. */
+const NATIVE_ROUNDS={
+ classic:'Classic',alternate:'Alternate','8pages':'8 Pages',fog:'Fog',ghost:'Ghost',
+ punished:'Punished',cracked:'Cracked',sabotage:'Sabotage',bloodbath:'Bloodbath',
+ midnight:'Midnight',unbound:'Unbound',moon:'Moon',other:'Other'
+};
+const NATIVE_VARIANTS={
+ sabotage_1:'Sabotage 1',sabotage_2:'Sabotage 2',
+ bloodbath:'BB',double_trouble:'DT',ex:'EX',
+ moon_1:'Moon 1',moon_2:'Moon 2',moon_3:'Moon 3',moon_4:'Moon 4',
+ other_1:'Other 1',other_2:'Other 2',other_3:'Other 3',other_4:'Other 4',other_5:'Other 5'
+};
+function nativeCatalogTerrorId(id){
+ const raw=String(id||'').trim();
+ if(/^T\d{3}$/.test(raw))return 'C'+raw.slice(1);
+ if(/^ALT\d{3}$/.test(raw))return 'A'+raw.slice(3);
+ if(/^8P\d{3}$/.test(raw))return 'E'+raw.slice(2);
+ if(/^UB\d{3}$/.test(raw))return 'U'+raw.slice(2);
+ if(/^(?:C|A|E|U)\d{3}$/.test(raw))return raw;
+ throw Error('元ツールのテラーIDを解釈できません: '+raw);
+}
+function nativeRoundName(key){
+ const value=String(key||'').trim();
+ if(!value)return '';
+ const name=NATIVE_ROUNDS[value.toLowerCase()]||rounds.find(r=>r.toLowerCase()===value.toLowerCase());
+ if(!name)throw Error('未対応のラウンド: '+value);
+ return name;
+}
+function nativeRoundOrderKey(key){
+ const segments=String(key||'').split('|');
+ return nativeRoundName(segments[0])+(segments.length>1&&segments[1]?'|'+(NATIVE_VARIANTS[segments[1]]||segments[1]):'');
+}
+function toWebFromNative(raw){
+ const source=raw?.Data&&Array.isArray(raw.Data.Sessions)?raw.Data:raw;
+ if(!Array.isArray(source?.Sessions))throw Error('元ツールの記録形式ではありません');
+ const sessions=source.Sessions.map(session=>{
+   const records=(session.Records||[]).map(record=>{
+     const round=nativeRoundName(record.RoundId);
+     const variant=NATIVE_VARIANTS[String(record.RoundVariantId||'').toLowerCase()]||'';
+     const ids=(record.TerrorIds||[]).map(nativeCatalogTerrorId);
+     if(round==='Unbound'&&record.UnboundId)ids.splice(0,ids.length,nativeCatalogTerrorId(record.UnboundId));
+     const rareChoices={};
+     for(const [key,val]of Object.entries(record.TerrorIconVariants||{})){
+       rareChoices[nativeCatalogTerrorId(key)]=String(val);
+     }
+     if(round==='Unbound'&&record.UnboundVariantId&&ids.length)
+       rareChoices[ids[0]]=String(record.UnboundVariantId);
+     const map=String(record.MapId||'').trim();
+     if(map&&!mapId(map))throw Error('元ツールのマップIDを解釈できません: '+map);
+     return {
+       id:String(record.Id||uid()),round,variant,terrors:ids,
+       map:mapId(map)||'',rareChoices,
+       survived:record.Survived??null,players:record.Players??null,
+       newPlayers:record.NewSurvivors??null,
+       summaryUppercase:!!record.SummaryUppercase,
+       summaryBold:!!record.SummaryBold,summaryPinned:!!record.SummaryPinned,
+       createdAt:record.CreatedAt||null,
+       sourceLogKey:record.SourceLogKey||'',
+       logRawTerrors:record.LogRawTerrors||'',
+       logRoundSeconds:record.LogRoundSeconds??null
+     };
+   });
+   const columns={};
+   for(const [key,value]of Object.entries(session.SummaryRoundColumns||{}))
+     columns[nativeRoundName(key)]=value;
+   return {
+     id:String(session.Id||uid()),name:String(session.Name||'周回'),
+     createdAt:session.CreatedAt||null,
+     records,summaryRoundOrder:(session.SummaryRoundOrder||[]).map(nativeRoundOrderKey),
+     summaryRoundColumns:columns
+   };
+ });
+ if(!sessions.length)throw Error('元ツールの周回が見つかりません');
+ const active=String(source.CurrentSessionId||sessions[0].id);
+ return {sessions,active:sessions.some(x=>x.id===active)?active:sessions[0].id,
+   mode:'icon',summaryViewVersion:2};
+}
+function validateWebImport(data){
+ if(!data||!Array.isArray(data.sessions)||!data.sessions.length)throw Error('周回データがありません');
+ if(data.sessions.some(s=>typeof s.id!=='string'||typeof s.name!=='string'||!Array.isArray(s.records)||s.records.some(r=>typeof r.id!=='string'||!rounds.includes(r.round)||!Array.isArray(r.terrors))))
+   throw Error('記録の形式が異なります');
+ return data;
+}
+function recognizeImportedData(obj){
+ if(obj?.app==='ton-round-records-web')return {data:validateWebImport(obj.data),native:false};
+ if(Array.isArray(obj?.Sessions)||Array.isArray(obj?.Data?.Sessions))
+   return {data:validateWebImport(toWebFromNative(obj)),native:true};
+ return {data:validateWebImport(obj),native:false};
+}
+$('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'ton-round-records-web',version:1,exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ToN-Records-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};$('importButton').onclick=()=>$('importFile').click();$('importFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>15e6)throw Error('ファイルが大きすぎます');const obj=JSON.parse(await file.text());const imported=recognizeImportedData(obj),data=imported.data;if(!confirm((imported.native?'元の.NET版から '+data.sessions.length+' 周回を変換しました。\n':'')+'現在のブラウザ内の記録を読み込んだデータで置き換えます。続けますか？'))return;state=data;state.active=state.sessions.some(s=>s.id===state.active)?state.active:state.sessions[0].id;state.mode=state.mode==='text'?'text':'icon';state.summaryViewVersion=2;persist();clearForm();renderSessions();notify(imported.native?'元ツールの記録を取り込みました':'読み込みました')}catch(err){notify('読み込み失敗: '+err.message)}finally{e.target.value=''}};
 updateForm();renderSessions();
 
 /* The original 1150px-wide window looked miniature on a full-screen monitor.
