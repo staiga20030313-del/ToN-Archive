@@ -205,11 +205,102 @@ button:not(:disabled):active{
   width:var(--terror-tile-size);height:var(--terror-tile-size);
   flex:0 0 var(--terror-tile-size)
 }
+
+/* v2: left-aligned vertical input rail, pending preview, 3/4 results panel. */
+.shell{max-width:1250px;min-width:0!important;width:100%;min-height:0!important;margin:0 auto;padding:10px 16px 18px}
+.archive-header{margin-bottom:12px!important;padding:12px 16px!important}
+.archive-header .headline{height:auto!important;min-height:36px;margin:0!important;display:flex;flex-wrap:nowrap}
+.archive-header .session-row{flex:1;min-width:0;justify-content:flex-end}
+.archive-header .session-row #sessionName{flex:0 1 240px;min-width:85px;max-width:260px}
+.archive-workspace{display:grid;grid-template-columns:minmax(245px,1fr) minmax(0,3fr);gap:12px;align-items:start;min-width:0}
+.archive-workspace>.entry-panel{height:auto!important;min-height:0!important;margin:0!important;padding:14px!important;position:relative;z-index:5;align-self:start;overflow:visible}
+.archive-workspace .entry-grid{display:flex!important;flex-direction:column!important;align-items:stretch!important;width:100%!important;height:auto!important;gap:13px!important}
+.archive-workspace .entry-grid>.control,
+.archive-workspace .entry-grid>.players-control{display:flex;flex-direction:column;gap:5px;width:100%!important;min-width:0!important;max-width:none!important;flex:0 0 auto!important}
+.archive-workspace .entry-grid>.control>label,
+.archive-workspace .entry-grid>.players-control>.input-group-title{display:block!important;font-size:12px;font-weight:700;line-height:17px;color:#bfb0cf;letter-spacing:.04em;text-transform:none}
+.archive-workspace .entry-grid .pick{width:100%!important;height:58px!important;min-height:58px!important;max-width:none!important;display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 9px;white-space:nowrap;font-size:13px}
+.archive-workspace .entry-grid #roundButton{width:100%!important;justify-content:center!important;height:58px!important;min-height:58px!important}
+.archive-workspace .entry-grid #terrorButton{justify-content:center!important}
+.archive-workspace .players-compact{display:flex!important;width:100%!important;flex:0 0 auto!important;max-width:none!important;height:58px!important;min-height:58px!important;margin:0;padding:6px 7px;gap:5px;justify-content:space-between}
+.archive-workspace .players-compact .control{flex:1 1 0;min-width:0;max-width:none;gap:4px}
+.archive-workspace .players-compact label{font-size:10px;line-height:12px;letter-spacing:0}
+.archive-workspace .players-compact input{width:100%;height:28px!important;min-width:0;font-size:14px;padding:3px 2px}
+.results-workspace{min-width:0;display:flex;flex-direction:column;gap:12px}
+.preview-panel{margin:0!important;padding:13px 15px!important;min-height:117px;overflow:hidden}
+.preview-topline{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px}
+.preview-heading{font-size:13px;font-weight:750;letter-spacing:.025em}
+.preview-hint{font-size:11px;color:var(--muted)}
+.preview-content{display:flex;align-items:center;gap:14px;justify-content:space-between;min-width:0}
+.preview-display{display:flex;align-items:center;gap:13px;min-width:0;flex:1 1 0;overflow:hidden}
+.preview-item{display:flex;align-items:center;gap:7px;min-width:0;flex:0 1 auto}
+.preview-item.round-preview{flex:0 0 auto}
+.preview-item.terror-preview{flex:1 1 0;min-width:0}
+.preview-item.map-preview{flex:0 1 130px;min-width:0}
+.preview-sprites{display:flex;align-items:center;gap:3px;flex:0 0 auto}
+.preview-sprites .round-sprite,.preview-sprites .terror-canvas,.preview-sprites .question-icon{flex:0 0 32px}
+.preview-item-text{display:flex;flex-direction:column;min-width:0;gap:3px}
+.preview-label{color:var(--muted);font-size:10px}
+.preview-value{font-size:12px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.preview-item.terror-preview .preview-value{max-width:290px}
+.preview-metrics{font-size:11px;line-height:1.5;flex:0 0 auto;text-align:center;color:#e6d9ef}
+.preview-metrics small{display:block;color:var(--muted);font-size:10px}
+.preview-actions{display:flex;flex-direction:column;align-items:stretch;gap:5px;flex:0 0 152px}
+.preview-actions #addEntry{width:100%!important;min-width:0!important;height:44px!important;font-size:12px;padding:5px}
+.preview-actions #cancelEdit{width:100%;font-size:11px;padding:5px}
+.preview-actions #cancelEdit[hidden]{display:none!important}
+.results-workspace>.records-panel{min-height:calc(100vh - 260px);margin:0!important;z-index:1}
+.results-workspace .records-panel>.headline{height:auto;min-height:38px;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.results-workspace .records-panel .list-tools{min-width:0;justify-content:flex-end}
+.results-workspace .records-panel .utility-row{margin-right:5px}
+.results-workspace .records-panel .group-heading{font-size:17px}
+.archive-workspace .entry-panel .selector{position:absolute;left:calc(100% + 7px);top:0;width:min(705px,calc(100vw - 305px));max-width:none;max-height:min(83vh,740px);overflow:auto;border-radius:7px;box-shadow:0 18px 45px #000a;z-index:50}
+.archive-workspace .entry-panel .selector.round-selecting{width:max-content;max-width:min(705px,calc(100vw - 305px))}
+.archive-workspace .entry-panel .selector.single-terror-grid{max-width:calc(100vw - 305px)}
+@media(min-width:1280px){
+ .archive-workspace .entry-panel .selector{max-height:min(83vh,740px)}
+ .archive-workspace .entry-panel .selector #tileGrid{max-height:min(75vh,680px)}
+}
+@media(max-width:1060px){
+ .archive-workspace{grid-template-columns:minmax(210px,29%) minmax(0,1fr)}
+ .preview-display{gap:7px}
+ .preview-actions{flex-basis:125px}
+ .preview-item.map-preview{display:none}
+ .results-workspace .records-panel .utility-row{gap:2px}
+}
+@media(max-width:720px){
+ .shell{padding:8px 10px 16px!important;min-width:0!important}
+ .archive-header .headline{flex-wrap:wrap}
+ .archive-header .session-row{flex-wrap:wrap}
+ .archive-workspace{display:flex;flex-direction:column}
+ .archive-workspace>.entry-panel,.results-workspace{width:100%}
+ .archive-workspace .entry-panel .selector{top:100%;left:0;width:100%;max-width:100%;max-height:65vh}
+ .archive-workspace .entry-panel .selector.round-selecting{max-width:100%}
+ .preview-display{gap:7px}
+ .preview-actions{flex-basis:120px}
+ .preview-item.terror-preview .preview-value{max-width:150px}
+ .preview-item.map-preview{display:none}
+}
 </style></head><body><main class="shell">
-<section class="panel entry-panel" style="position:relative"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" style="max-width:240px"></select><button id="addSession">＋ 新規周回</button></div></div><div class="entry-grid"><div class="control"><label>ROUND</label><button class="pick" id="roundButton" aria-label="ラウンドを選択">?</button></div><div class="control"><label>TERROR</label><button class="pick" id="terrorButton">テラーを選択</button></div><div class="players-compact"><div class="control"><label>SURVIVED / 生存</label><input class="field" id="survived" min="0" placeholder="?" type="number"/></div><div class="control"><label>PLAYERS / 参加</label><input class="field" id="players" min="0" placeholder="?" type="number"/></div><div class="control"><label>NEW / 新規生存</label><input class="field" id="newPlayers" min="0" placeholder="?" type="number"/></div></div><div class="control"><label>MAP</label><button class="pick" id="mapButton">マップを選択</button></div><button class="primary" id="addEntry">＋ 成果を追加</button><button hidden="" id="cancelEdit">編集を解除</button></div>
+<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
+<div class="archive-workspace">
+<section class="panel entry-panel" aria-label="成果の入力">
+<div class="entry-grid">
+ <div class="control"><label for="roundButton">ラウンド</label><button class="pick" id="roundButton" aria-label="ラウンドを選択">?</button></div>
+ <div class="control"><label for="terrorButton">テラー</label><button class="pick" id="terrorButton" aria-label="テラーを選択">テラーを選択</button></div>
+ <div class="players-control"><label class="input-group-title">人数</label><div class="players-compact">
+   <div class="control"><label for="survived">生存</label><input class="field" id="survived" min="0" placeholder="?" type="number"/></div>
+   <div class="control"><label for="players">参加</label><input class="field" id="players" min="0" placeholder="?" type="number"/></div>
+   <div class="control"><label for="newPlayers">新規生存</label><input class="field" id="newPlayers" min="0" placeholder="?" type="number"/></div>
+ </div></div>
+ <div class="control"><label for="mapButton">マップ</label><button class="pick" id="mapButton">マップを選択</button></div>
+</div>
 <div class="selector" id="selector"><div class="choice-title"><div><b id="selectorHeading">ラウンド選択</b><div class="tiny" id="selectorTip">アイコンをクリックして選択</div></div><button class="mini" id="closeSelector">閉じる ×</button></div><div id="terrorNamePreview" aria-live="polite"></div><div class="selectorbar" id="selectorTabs"></div><div class="tilegrid" id="tileGrid"></div></div>
 </section>
-<section class="panel records-panel"><div class="headline"><div><h2>成果一覧 <span class="pill" id="recordCount">0</span></h2><div class="tiny" style="margin-top:8px">ドラッグ＆ドロップで順序を変更できる</div></div><div class="list-tools"><div class="utility-row"><button class="danger" id="deleteSession">周回を削除</button><button id="export">JSONを書き出す</button><button id="importButton">JSONを読み込む</button><input accept=".json,application/json" hidden="" id="importFile" type="file"/></div><input aria-label="記録を検索" class="field" id="search" placeholder="記録を検索" style="max-width:200px"/><button class="chip on" id="listView">テキスト</button><button class="chip" id="iconView">アイコン形式</button></div></div><div class="records" id="records"></div></section>
+<div class="results-workspace">
+ <section class="panel preview-panel" aria-label="追加予定の成果"><div class="preview-topline"><span class="preview-heading" id="previewHeading">追加予定の成果</span><span class="preview-hint" id="previewHint">左の項目から入力</span></div><div class="preview-content"><div class="preview-display" id="previewDisplay" aria-live="polite"></div><div class="preview-actions"><button class="primary" id="addEntry">＋ 成果まとめに追加</button><button hidden="" id="cancelEdit">編集を解除</button></div></div></section>
+ <section class="panel records-panel"><div class="headline"><div><h2>成果まとめ <span class="pill" id="recordCount">0</span></h2></div><div class="list-tools"><div class="utility-row"><button class="danger" id="deleteSession">周回を削除</button><button id="export">JSONを書き出す</button><button id="importButton">JSONを読み込む</button><input accept=".json,application/json" hidden="" id="importFile" type="file"/></div><input aria-label="記録を検索" class="field" id="search" placeholder="記録を検索" style="max-width:200px"/><button class="chip on" id="listView">テキスト</button><button class="chip" id="iconView">アイコン形式</button></div></div><div class="records" id="records"></div></section>
+</div></div>
 </main><div class="status" id="toast" role="status"></div>
 <script src="./assets/terror_config.js"></script>
 <script>
@@ -432,9 +523,36 @@ function updateForm(){
  t.classList.toggle('selected',!!chosen.length);
  const m=$('mapButton');m.textContent=form.map||'マップを選択';m.classList.toggle('selected',!!form.map);
  for(const id of ['survived','players','newPlayers'])$(id).value=form[id];
- $('addEntry').textContent=editing?'変更を保存':'＋ 成果を追加';
+ $('addEntry').textContent=editing?'変更を保存':'＋ 成果まとめに追加';
  $('cancelEdit').hidden=!editing;
+ renderPendingPreview();
 }
+
+/* Preview only: the saved record format and existing actions are untouched. */
+function renderPendingPreview(){
+ const root=$('previewDisplay');if(!root)return;
+ root.replaceChildren();
+ $('previewHeading').textContent=editing?'編集中の成果':'追加予定の成果';
+ $('previewHint').textContent=form.round?'内容を確認して追加':'左の項目から入力';
+ const part=(kind,label,value,nodes=[])=>{
+   const item=dom('div','preview-item '+kind);
+   if(nodes.length){const sprites=dom('div','preview-sprites');sprites.append(...nodes);item.append(sprites)}
+   const text=dom('div','preview-item-text');
+   text.append(dom('span','preview-label',label));
+   const v=dom('span','preview-value',value);v.title=value;
+   text.append(v);item.append(text);root.append(item);
+ };
+ part('round-preview','ROUND',[form.round,form.variant].filter(Boolean).join(' / ')||'未選択',[roundIcon(form.round,form.variant)||questionIcon()]);
+ const chosen=form.terrors||[];
+ const ids=form.round==='Bloodbath'&&form.variant==='EX'&&chosen[0]?Array(3).fill(chosen[0]):chosen.slice(0,3);
+ part('terror-preview','TERROR',chosen.length?chosen.map(id=>terrorDisplayName(id,form.round,form.rareChoices?.[id])).join(' / '):'未選択',
+   ids.length?ids.map(id=>terrorIcon(id,form.round,form.variant,form.rareChoices?.[id])):[questionIcon(form.round,form.variant)]);
+ const counts=['survived','players','newPlayers'].map(k=>form[k]===''||form[k]===null||form[k]===undefined?'?':form[k]);
+ const metrics=dom('div','preview-metrics',counts.join(' / '));
+ metrics.prepend(dom('small','', '生存 / 参加 / 新規'));root.append(metrics);
+ part('map-preview','MAP',form.map||'未選択');
+}
+
 function choose(kind){if(selector===kind){selector=null;$('selector').classList.remove('open');return}selector=kind;$('selector').classList.add('open');renderSelector()}
 
 function renderSelector(){
@@ -568,7 +686,7 @@ function fitStandaloneTerrorGrid(){
  popup.style.overflow=mustScroll?'auto':'visible';
 }
 function clearForm(){editing=null;form={round:'',variant:'',terrors:[],rareChoices:{},map:'',survived:'',players:'',newPlayers:''};updateForm()}
-function readCounts(){for(let id of ['survived','players','newPlayers'])form[id]=$(id).value.trim()}
+function readCounts(){for(let id of ['survived','players','newPlayers'])form[id]=$(id).value.trim();renderPendingPreview()}
 function commit(){readCounts();if(!form.round){notify('ラウンドを選択してください');return}
  const count=form.terrors.length;
  if(form.round==='Midnight'&&count>0&&(count!==3||form.terrors.filter(x=>x.startsWith('A')).length!==1)){notify('MidnightはClassic 2体＋Alternate 1体を選択してください');return}
@@ -589,7 +707,7 @@ function renderRecords(){const root=$('records');root.replaceChildren();root.cla
 const np=rec.newPlayers===null?'':'NEW '+num(rec.newPlayers);
 if(pair||np)info.append(dom('span','numbers',[pair,np].filter(Boolean).join('   ')));row.append(info);const actions=dom('div','actions');let eb=dom('button','','編集');eb.onclick=()=>edit(rec);let db=dom('button','danger','削除');db.onclick=()=>remove(rec.id);actions.append(eb,db);row.append(actions);
 row.addEventListener('dragstart',e=>{if(q){e.preventDefault();notify('並べ替えは検索を解除してから行ってください');return}e.dataTransfer.setData('text/plain',rec.id);e.dataTransfer.effectAllowed='move';row.classList.add('dragging')});row.addEventListener('dragend',()=>{row.classList.remove('dragging');root.querySelectorAll('.drop-target').forEach(n=>n.classList.remove('drop-target'))});row.addEventListener('dragover',e=>{e.preventDefault();row.classList.add('drop-target')});row.addEventListener('dragleave',()=>row.classList.remove('drop-target'));row.addEventListener('drop',e=>{e.preventDefault();row.classList.remove('drop-target');const id=e.dataTransfer.getData('text/plain'),arr=current().records,a=arr.findIndex(r=>r.id===id),b=arr.findIndex(r=>r.id===rec.id);if(a<0||b<0||a===b)return;if(arr[a].round!==arr[b].round){notify('ラウンド内のテラー順を変更できます');return;}const [v]=arr.splice(a,1);arr.splice(b,0,v);persist();renderRecords()});root.append(row)}}
-$('roundButton').onclick=()=>choose('round');$('terrorButton').onclick=()=>choose('terror');$('mapButton').onclick=()=>choose('map');$('closeSelector').onclick=()=>{selector=null;$('selector').classList.remove('open')};$('addEntry').onclick=commit;$('cancelEdit').onclick=clearForm;$('search').oninput=renderRecords;
+$('roundButton').onclick=()=>choose('round');$('terrorButton').onclick=()=>choose('terror');$('mapButton').onclick=()=>choose('map');$('closeSelector').onclick=()=>{selector=null;$('selector').classList.remove('open')};for(const id of ['survived','players','newPlayers'])$(id).addEventListener('input',readCounts);$('addEntry').onclick=commit;$('cancelEdit').onclick=clearForm;$('search').oninput=renderRecords;
 $('addSession').onclick=()=>{let s={id:uid(),name:'周回 '+(state.sessions.length+1),records:[]};state.sessions.push(s);state.active=s.id;persist();clearForm();renderSessions()};$('deleteSession').onclick=()=>{if(state.sessions.length===1){notify('最後の周回は削除できません');return}if(!confirm('この周回と含まれる成果を削除しますか？'))return;state.sessions=state.sessions.filter(s=>s.id!==state.active);state.active=state.sessions[0].id;persist();clearForm();renderSessions()};$('session').onchange=e=>{state.active=e.target.value;clearForm();persist();renderSessions()};$('sessionName').onchange=e=>{let s=e.target.value.trim();if(!s){e.target.value=current().name;return}current().name=s;persist();renderSessions()};$('listView').onclick=()=>{state.mode='text';persist();renderRecords()};$('iconView').onclick=()=>{state.mode='icon';persist();renderRecords()};
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'ton-round-records-web',version:1,exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ToN-Records-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};$('importButton').onclick=()=>$('importFile').click();$('importFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>5e6)throw Error('ファイルが大きすぎます');const obj=JSON.parse(await file.text());const data=obj.app==='ton-round-records-web'?obj.data:obj;if(!data||!Array.isArray(data.sessions)||!data.sessions.length||data.sessions.some(s=>typeof s.id!=='string'||typeof s.name!=='string'||!Array.isArray(s.records)||s.records.some(r=>typeof r.id!=='string'||typeof r.round!=='string')))throw Error('形式が異なります');if(!confirm('現在のブラウザ内の記録を読み込んだデータで置き換えます。続けますか？'))return;state=data;state.active=state.sessions.some(s=>s.id===state.active)?state.active:state.sessions[0].id;state.mode=state.mode==='icon'?'icon':'text';persist();clearForm();renderSessions();notify('読み込みました')}catch(err){notify('読み込み失敗: '+err.message)}finally{e.target.value=''}};
 updateForm();renderSessions();
