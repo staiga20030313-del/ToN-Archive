@@ -637,7 +637,7 @@ const ROUND_ATLAS_COORDS={"Classic":[32,320],"Alternate":[320,320],"8 Pages":[35
 const ROUND_SUBICON_COORDS={"Sabotage|Sabotage 1":[480,320],"Sabotage|Sabotage 2":[448,320],"Bloodbath|BB":[512,320],"Bloodbath|DT":[544,320],"Bloodbath|EX":[576,320],"Moon|Moon 1":[0,288],"Moon|Moon 2":[32,288],"Moon|Moon 3":[64,288],"Moon|Moon 4":[96,288],"Other|Other 1":[160,288],"Other|Other 2":[256,288],"Other|Other 3":[384,320],"Other|Other 4":[416,320],"Other|Other 5":[128,288]};
 const variants={'Sabotage':['Sabotage 1','Sabotage 2'],'Bloodbath':['BB','DT','EX'],'Moon':['Moon 1','Moon 2','Moon 3','Moon 4'],'Other':['Other 1','Other 2','Other 3','Other 4','Other 5']};
 const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random();
-const initial=()=>({sessions:[{id:uid(),name:'周回 1',records:[]}],active:null,mode:'text'});
+const initial=()=>({sessions:[{id:uid(),name:'周回 1',records:[]}],active:null,mode:'icon'});
 let state;try{state=JSON.parse(localStorage.getItem(KEY))}catch{state=null}if(!state||!Array.isArray(state.sessions)||!state.sessions.length)state=initial();if(!state.active||!state.sessions.some(s=>s.id===state.active))state.active=state.sessions[0].id;
 let form={round:'',variant:'',terrors:[],rareChoices:{},map:'',survived:'',players:'',newPlayers:''}, editing=null, selector=null, expandedRound=null, terrorTab='Classic', toastTimer;
 const $=id=>document.getElementById(id);const current=()=>state.sessions.find(x=>x.id===state.active);
@@ -1421,78 +1421,120 @@ function summaryInit(){
  state.mode=state.mode==='text'?'text':'icon';renderRecords();
 }
 async function summaryExportPng(){
- const session=current(), cols=summaryBuildColumns(),W=1080,pad=16,headerH=54,colW=518,gap=12;
+ const session=current(),iconMode=state.mode!=='text';
+ const cols=iconMode?summaryBuildColumns():[[
+   ...(session.records.some(r=>r.summaryPinned)?[{base:'__highlights',groups:[{round:'__highlights',variant:'',records:session.records.filter(r=>r.summaryPinned)}]}]:[]),
+   ...summaryRecordsByBase()
+ ],[]];
+ const W=1080,colW=518,leftX=16,rightX=546,pad=16,headerH=54,gap=12;
  try{
    if(document.fonts?.ready)await document.fonts.ready;
-   let totalHeight=headerH+pad;
-   for(const col of cols){
-     const h=col.reduce((sum,b)=>sum+summaryBlockHeight(b),0);
-     totalHeight=Math.max(totalHeight,headerH+pad+h+pad);
-   }
-   if(totalHeight>16000)throw Error('PNGの高さ上限を超えました');
-   const output=document.createElement('canvas');output.width=W;output.height=Math.ceil(Math.max(140,totalHeight));
-   const g=output.getContext('2d');g.fillStyle='#211a2a';g.fillRect(0,0,output.width,output.height);
+   const rowHeight=rec=>iconMode?summaryRowHeight(rec):(rec.summaryUppercase?70:49);
+   const groupHeight=group=>25+group.records.reduce((sum,rec)=>sum+rowHeight(rec),0)+3;
+   const blocksHeight=col=>col.reduce((sum,block)=>sum+block.groups.reduce((s,group)=>s+groupHeight(group)+gap,0),0);
+   const H=Math.ceil(Math.max(140,headerH+pad+Math.max(...cols.map(blocksHeight))+pad));
+   if(H>16000)throw Error('PNGの高さ上限を超えました');
+   const output=document.createElement('canvas');output.width=W;output.height=H;
+   const g=output.getContext('2d');
+   g.fillStyle='#211a2a';g.fillRect(0,0,W,H);
    g.fillStyle='#b189d2';g.fillRect(0,0,4,headerH);
    g.fillStyle='#efe8f3';g.font='700 22px "PixelMplus12",sans-serif';
-   g.fillText(session.name||'ToN Results',22,34);
-   for(let c=0;c<2;c++){
-     let y=headerH+pad;const x=pad+c*(colW+gap);
+   g.fillText(session.name||'ToN Results',22,34,W-44);
+   const stroke=(fromX,fromY,toX,toY)=>{g.beginPath();g.moveTo(fromX+.5,fromY+.5);g.lineTo(toX+.5,toY+.5);g.stroke()};
+   for(let c=0;c<(iconMode?2:1);c++){
+     let y=headerH+pad,x=iconMode?(c?rightX:leftX):leftX;
+     const width=iconMode?colW:W-32;
      for(const block of cols[c]){
        for(const group of block.groups){
-         const accent=summaryGroupColor(group.round,group.variant);
-         const groupH=33+group.records.reduce((n,r)=>n+summaryRowHeight(r),0)+9;
-         g.strokeStyle=accent;g.lineWidth=1;g.strokeRect(x+.5,y+.5,colW-1,groupH-1);
-         if(group.round==='__highlights')g.strokeRect(x+4.5,y+4.5,colW-9,groupH-9);
-         if(group.round!=='__highlights'){
+         const gh=groupHeight(group),color=summaryGroupColor(group.round,group.variant),title=summaryGroupTitle(group);
+         // Native border starts at x+35, y+24; title interrupts the top line.
+         g.strokeStyle=color;g.lineWidth=1;
+         g.font='700 16px "PixelMplus12",sans-serif';
+         const titleX=x+(group.round==='__highlights'?14:53);
+         const titleWidth=g.measureText(title).width;
+         const top=y+24,bottom=y+gh-3,frameLeft=x+35,frameRight=x+width-4;
+         stroke(Math.min(frameRight,titleX+titleWidth+6),top,frameRight,top);
+         stroke(frameRight,top,frameRight,bottom);
+         stroke(frameLeft,bottom,frameRight,bottom);
+         stroke(frameLeft,y+22,frameLeft,bottom);
+         if(group.round==='__highlights'){
+           g.strokeStyle='#987daa';
+           stroke(Math.min(frameRight-4,titleX+titleWidth+10),top+4,frameRight-4,top+4);
+           stroke(frameRight-4,top+4,frameRight-4,bottom-4);
+           stroke(frameLeft+4,bottom-4,frameRight-4,bottom-4);
+           stroke(frameLeft+4,y+26,frameLeft+4,bottom-4);
+         }else{
            const pos=(group.variant&&ROUND_SUBICON_COORDS[group.round+'|'+group.variant])||ROUND_ATLAS_COORDS[group.round];
-           if(pos&&summaryRoundImageReady)g.drawImage(summaryRoundImage,pos[0],pos[1],32,32,x+11,y+2,24,24);
+           if(pos&&summaryRoundImageReady){
+             g.imageSmoothingEnabled=false;
+             g.drawImage(summaryRoundImage,pos[0],pos[1],32,32,x+14,y,32,32);
+           }
          }
-         g.fillStyle=group.round==='__highlights'?'#d8b3f9':'#efe8f3';g.font='700 16px "PixelMplus12",sans-serif';
-         g.fillText(summaryGroupTitle(group),x+(group.round==='__highlights'?15:43),y+22,colW-55);
-         let ry=y+33;
+         g.font='700 16px "PixelMplus12",sans-serif';
+         g.fillStyle=group.round==='__highlights'?'#d8b3f9':'#efe8f3';
+         g.fillText(title,titleX,y+22,Math.max(0,width-65));
+         let ry=y+25;
          for(const r of group.records){
-           const h=summaryRowHeight(r),large=!!r.summaryUppercase;
-           const ids=(r.round==='Bloodbath'&&r.variant==='EX'&&r.terrors?.[0])?Array(3).fill(r.terrors[0]):(r.terrors||[]);
-           let k=0;
-           for(const id of ids.slice(0,4)){
-             const icon=cachedTerrorCanvas(id,r.round,r.variant,r.rareChoices?.[id]);
-             const side=id.startsWith('U')?(large?76:38):(large?64:32);
-             if(icon){
-               const gx=x+38+(k%3)*side,gy=ry+5+Math.floor(k/3)*(side+3);
-               g.imageSmoothingEnabled=false;g.drawImage(icon,gx,gy,side,side);
+           const rh=rowHeight(r),large=!!r.summaryUppercase;
+           const ids=r.round==='Bloodbath'&&r.variant==='EX'&&r.terrors?.[0]?Array(3).fill(r.terrors[0]):r.terrors||[];
+           if(iconMode){
+             for(let k=0;k<Math.min(ids.length,4);k++){
+               const id=ids[k],art=cachedTerrorCanvas(id,r.round,r.variant,r.rareChoices?.[id]);
+               const size=id.startsWith('U')?(large?76:38):(large?64:32);
+               if(art){
+                 const col=k%3,row=Math.floor(k/3);
+                 const startX=x+39+col*size,startY=ry+5+row*(size+4);
+                 g.imageSmoothingEnabled=false;g.drawImage(art,startX,startY,size,size);
+               }
              }
-             k++;
+             if(r.round==='Unbound'&&ids[0]){
+               g.font=(large?'18':'11')+'px "PixelMplus12",sans-serif';
+               g.fillStyle='#eee8f3';
+               g.fillText(terrorDisplayName(ids[0],r.round,r.rareChoices?.[ids[0]]),x+39,ry+(large?116:57),190);
+             }
+           }else{
+             const label=ids.map(id=>terrorDisplayName(id,r.round,r.rareChoices?.[id])).join(', ')||'—';
+             g.font=(r.summaryBold?'700 ':'400 ')+(large?'22':'15')+'px "PixelMplus12",sans-serif';
+             g.fillStyle='#eee8f3';g.fillText(large?label.toUpperCase():label,x+52,ry+(large?45:31),360);
            }
-           if(r.round==='Unbound'&&ids[0]){
-             g.fillStyle='#f2eaff';g.font=(large?'18':'11')+'px "PixelMplus12",sans-serif';
-             g.fillText(terrorDisplayName(ids[0],r.round,r.rareChoices?.[ids[0]]),x+38,ry+(large?111:53),195);
+           const vals=summaryCounts(r);
+           if(iconMode){
+             // Native: map at right, numbers immediately to its left.
+             const mapX=x+width-4-4-204;
+             const countX=mapX-146,newX=mapX-68;
+             g.fillStyle='#efe8f3';
+             g.font=(r.summaryBold?'700 ':'400 ')+(large?'29':'18')+'px "PixelMplus12",sans-serif';
+             if(vals.pair)g.fillText(vals.pair,large?x+274:countX,ry+(large?39:29),large?126:72);
+             if(vals.newcomer){
+               g.fillStyle='#ad9cb7';g.font=(large?'17':'12')+'px "PixelMplus12",sans-serif';
+               g.fillText('New',large?x+402:newX,ry+(large?33:27));
+               g.fillStyle='#eee8f3';g.font=(r.summaryBold?'700 ':'400 ')+(large?'29':'18')+'px "PixelMplus12",sans-serif';
+               g.fillText(vals.newcomer,(large?x+448:newX+28),ry+(large?39:29),55);
+             }
+             if(r.map){
+               const badge=mapBadge(r.map);
+               if(badge){g.imageSmoothingEnabled=false;g.drawImage(badge,mapX,ry+(large?rh-43:4),204,40)}
+             }
+           }else{
+             g.fillStyle='#eee8f3';g.font=(large?'27':'18')+'px "PixelMplus12",sans-serif';
+             if(vals.pair)g.fillText(vals.pair,x+540,ry+31,110);
+             if(vals.newcomer){g.fillText('New '+vals.newcomer,x+650,ry+31,100)}
+             if(r.map){const badge=mapBadge(r.map);if(badge){g.imageSmoothingEnabled=false;g.drawImage(badge,x+width-210,ry+4,204,40)}}
            }
-           const count=summaryCounts(r);
-           g.fillStyle='#eee8f3';g.font=(r.summaryBold?'700 ':'400 ')+(large?'29':'18')+'px "PixelMplus12",sans-serif';
-           if(count.pair)g.fillText(count.pair,x+(large?260:185),ry+(large?39:29),116);
-           if(count.newcomer){
-             g.fillStyle='#ad9cb7';g.font=(large?'17':'12')+'px "PixelMplus12",sans-serif';
-             g.fillText('New',x+(large?380:279),ry+(large?33:27));
-             g.fillStyle='#eee8f3';g.font=(r.summaryBold?'700 ':'400 ')+(large?'29':'18')+'px "PixelMplus12",sans-serif';
-             g.fillText(count.newcomer,x+(large?424:308),ry+(large?39:29),75);
-           }
-           const map=r.map?mapBadge(r.map):null;
-           if(map){g.imageSmoothingEnabled=false;g.drawImage(map,x+colW-209,ry+(large?h-43:4),204,40)}
-           ry+=h;
+           ry+=rh;
          }
-         y+=groupH+7;
+         y+=gh+gap;
        }
      }
    }
    const blob=await new Promise((resolve,reject)=>output.toBlob(b=>b?resolve(b):reject(new Error('PNGの生成に失敗')),'image/png'));
-   const link=document.createElement('a');const uri=URL.createObjectURL(blob);
-   link.href=uri;link.download=(session.name||'ToN_Summary').replace(/[\\/:*?"<>|]/g,'_')+'_summary.png';
-   document.body.append(link);link.click();link.remove();
+   const a=document.createElement('a'),uri=URL.createObjectURL(blob);
+   a.href=uri;a.download=(session.name||'ToN_Summary').replace(/[\\/:*?"<>|]/g,'_')+'_summary.png';
+   document.body.append(a);a.click();a.remove();
    setTimeout(()=>URL.revokeObjectURL(uri),2500);
    notify('PNGを書き出しました');
  }catch(err){notify('PNG出力失敗: '+err.message)}
 }
-
 $('roundButton').onclick=()=>choose('round');$('terrorButton').onclick=()=>choose('terror');$('mapButton').onclick=()=>choose('map');$('closeSelector').onclick=()=>{selector=null;$('selector').classList.remove('open')};for(const id of ['survived','players','newPlayers'])$(id).addEventListener('input',readCounts);$('addEntry').onclick=commit;$('cancelEdit').onclick=clearForm;$('search').oninput=renderRecords;
 $('addSession').onclick=()=>{let s={id:uid(),name:'周回 '+(state.sessions.length+1),records:[]};state.sessions.push(s);state.active=s.id;persist();clearForm();renderSessions()};$('deleteSession').onclick=()=>{if(state.sessions.length===1){notify('最後の周回は削除できません');return}if(!confirm('この周回と含まれる成果を削除しますか？'))return;state.sessions=state.sessions.filter(s=>s.id!==state.active);state.active=state.sessions[0].id;persist();clearForm();renderSessions()};$('session').onchange=e=>{state.active=e.target.value;clearForm();persist();renderSessions()};$('sessionName').onchange=e=>{let s=e.target.value.trim();if(!s){e.target.value=current().name;return}current().name=s;persist();renderSessions()};$('listView').onclick=()=>{state.mode='text';persist();renderRecords()};$('iconView').onclick=()=>{state.mode='icon';persist();renderRecords()};
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'ton-round-records-web',version:1,exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ToN-Records-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};$('importButton').onclick=()=>$('importFile').click();$('importFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>5e6)throw Error('ファイルが大きすぎます');const obj=JSON.parse(await file.text());const data=obj.app==='ton-round-records-web'?obj.data:obj;if(!data||!Array.isArray(data.sessions)||!data.sessions.length||data.sessions.some(s=>typeof s.id!=='string'||typeof s.name!=='string'||!Array.isArray(s.records)||s.records.some(r=>typeof r.id!=='string'||typeof r.round!=='string')))throw Error('形式が異なります');if(!confirm('現在のブラウザ内の記録を読み込んだデータで置き換えます。続けますか？'))return;state=data;state.active=state.sessions.some(s=>s.id===state.active)?state.active:state.sessions[0].id;state.mode=state.mode==='icon'?'icon':'text';persist();clearForm();renderSessions();notify('読み込みました')}catch(err){notify('読み込み失敗: '+err.message)}finally{e.target.value=''}};
