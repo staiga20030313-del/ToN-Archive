@@ -70,8 +70,7 @@ body{background:var(--bg);font-family:'PixelMplus12','Yu Gothic UI',sans-serif;m
 /* Native round sprite atlas: pixel-accurate 32 x 32 crops from the .NET shared atlas. */
 .round-sprite{display:inline-block;flex:0 0 32px;width:32px;height:32px;background-image:url('./assets/round_atlas.png');background-repeat:no-repeat;image-rendering:pixelated}
 #roundButton.has-round-sprite{display:flex;align-items:center;justify-content:center;padding:3px}
-/* Round chooser: an unselected sprite has 16px of free space above it.
-   Selected sprites rise exactly half their 32px height; no tile backgrounds. */
+/* Round chooser: selected sprites rise 5px; no tile backgrounds. */
 .selector.round-selecting{padding:5px 12px 6px}
 .selector.round-selecting .choice-title,
 .selector.round-selecting #selectorTabs,
@@ -90,10 +89,54 @@ body{background:var(--bg);font-family:'PixelMplus12','Yu Gothic UI',sans-serif;m
 .tilegrid.variant-layout .tile.round-tile:hover{background:transparent!important;filter:brightness(1.2)}
 .tilegrid.round-layout .tile.round-tile.active,
 .tilegrid.variant-layout .tile.round-tile.active{
- background:transparent!important;border:0!important;transform:translateY(-16px)
+ background:transparent!important;border:0!important;transform:translateY(-5px)
 }
 .tilegrid.round-layout .tile.round-tile.has-variants::after{content:none}
 .tilegrid.round-layout .tile.variant-tile{align-self:end}
+
+/* Pressable feel shared by all enabled controls; never modify application state. */
+button:not(:disabled){
+  transform-origin:center center;
+  transition:transform 140ms cubic-bezier(.2,.75,.25,1),box-shadow 140ms ease,filter 140ms ease,background-color 140ms ease;
+}
+button:not(:disabled):hover{
+  transform:translateY(1px) scale(.97);
+  box-shadow:inset 0 2px 3px #0005;
+  filter:brightness(.97);
+}
+button:not(:disabled):active{
+  transform:translateY(3px) scale(.92);
+  box-shadow:inset 0 3px 6px #0009;
+  filter:brightness(.88);
+  transition-duration:65ms;
+}
+/* Round icon buttons stay entirely transparent while preserving the small rise. */
+.tilegrid.round-layout .tile.round-tile:not(:disabled):hover,
+.tilegrid.variant-layout .tile.round-tile:not(:disabled):hover{
+  transform:translateY(1px) scale(.96);
+  background:transparent!important;
+  box-shadow:none!important;
+  filter:brightness(.96);
+}
+.tilegrid.round-layout .tile.round-tile.active:not(:disabled):hover,
+.tilegrid.variant-layout .tile.round-tile.active:not(:disabled):hover{
+  transform:translateY(-4px) scale(.96);
+}
+.tilegrid.round-layout .tile.round-tile:not(:disabled):active,
+.tilegrid.variant-layout .tile.round-tile:not(:disabled):active{
+  transform:translateY(3px) scale(.90);
+  background:transparent!important;
+  box-shadow:none!important;
+  filter:brightness(.82);
+}
+.tilegrid.round-layout .tile.round-tile.active:not(:disabled):active,
+.tilegrid.variant-layout .tile.round-tile.active:not(:disabled):active{
+  transform:translateY(-1px) scale(.90);
+}
+@media(prefers-reduced-motion:reduce){
+  button:not(:disabled){transition:none!important}
+}
+
 @media(prefers-reduced-motion:reduce){.tilegrid.round-layout .tile.round-tile,.tilegrid.variant-layout .tile.round-tile{transition:none}}
 </style></head><body><main class="shell">
 <section class="panel entry-panel" style="position:relative"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" style="max-width:240px"></select><button id="addSession">＋ 新規周回</button></div></div><div class="entry-grid"><div class="control"><label>ROUND</label><button class="pick" id="roundButton">ラウンドを選択</button></div><div class="control"><label>TERROR</label><button class="pick" id="terrorButton">テラーを選択</button></div><div class="players-compact"><div class="control"><label>SURVIVED / 生存</label><input class="field" id="survived" min="0" placeholder="?" type="number"/></div><div class="control"><label>PLAYERS / 参加</label><input class="field" id="players" min="0" placeholder="?" type="number"/></div><div class="control"><label>NEW / 新規生存</label><input class="field" id="newPlayers" min="0" placeholder="?" type="number"/></div></div><div class="control"><label>MAP</label><button class="pick" id="mapButton">マップを選択</button></div><button class="primary" id="addEntry">＋ 成果を追加</button><button hidden="" id="cancelEdit">編集を解除</button></div>
