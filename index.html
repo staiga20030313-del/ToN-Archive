@@ -1323,22 +1323,27 @@ let summaryRoundImageReady=false;
 const summaryRoundPalette=new Map();
 summaryRoundImage.onload=()=>{summaryRoundImageReady=true;summaryRoundPalette.clear();renderRecords()};
 summaryRoundImage.src='./assets/round_atlas.png';
+/* Native RecordsCanvas orders by full RoundId|RoundVariantId, with first
+   appearance as the fallback. Preserve imported per-variant order. */
 function summaryBaseOrder(){
- const session=current();const used=[...new Set(session.records.filter(r=>!r.summaryPinned).map(r=>r.round))];
+ const session=current(),records=session.records.filter(r=>!r.summaryPinned);
+ const used=[...new Set(records.map(r=>r.round))];
  const stored=Array.isArray(session.summaryRoundOrder)?session.summaryRoundOrder:[];
- const normalized=stored.map(v=>String(v).split('|')[0]);
+ const rank=base=>stored.findIndex(key=>key===base||String(key).startsWith(base+'|'));
  return used.sort((a,b)=>{
-   const ai=normalized.indexOf(a),bi=normalized.indexOf(b);
-   if(ai>=0||bi>=0)return (ai<0?999:ai)-(bi<0?999:bi);
-   const ar=rounds.indexOf(a),br=rounds.indexOf(b);
-   return (ar<0?999:ar)-(br<0?999:br);
+   const ai=rank(a),bi=rank(b);
+   return ai<0&&bi<0?0:(ai<0?Infinity:ai)-(bi<0?Infinity:bi);
  });
 }
 function summaryRecordsByBase(){
- const session=current(),ordered=summaryBaseOrder(),blocks=[];
- for(const base of ordered){
+ const session=current(),stored=Array.isArray(session.summaryRoundOrder)?session.summaryRoundOrder:[],blocks=[];
+ for(const base of summaryBaseOrder()){
    const entries=session.records.filter(r=>!r.summaryPinned&&r.round===base);
    const variantsInOrder=[...new Set(entries.map(r=>r.variant||''))];
+   variantsInOrder.sort((a,b)=>{
+     const ai=stored.indexOf(base+'|'+a),bi=stored.indexOf(base+'|'+b);
+     return ai<0&&bi<0?0:(ai<0?Infinity:ai)-(bi<0?Infinity:bi);
+   });
    const subs=variantsInOrder.map(variant=>({round:base,variant,records:entries.filter(r=>(r.variant||'')===variant)}));
    blocks.push({base,groups:subs});
  }
@@ -1427,14 +1432,40 @@ function summaryClearIndicators(){
 function summarySaveAndDraw(){
  persist();renderRecords();
 }
-function summaryMoveRound(from,to,column){
+function summaryMoveRound(from,to,column,after=false){
  if(!from||from==='__highlights'||(from===to&&column===undefined))return;
- const session=current(),order=summaryBaseOrder().filter(x=>x!==from);
- const index=to?order.indexOf(to):-1;
- order.splice(index<0?order.length:index,0,from);
- session.summaryRoundOrder=order;
- if(!session.summaryRoundColumns)session.summaryRoundColumns={};
- if(column===0||column===1)session.summaryRoundColumns[from]=column;
+ if(column!==0&&column!==1)return;
+ const session=current(),blocks=summaryRecordsByBase();
+ if(!blocks.some(block=>block.base===from))return;
+ const snapshot=summaryBuildColumns();
+ const order=summaryBaseOrder().filter(base=>base!==from);
+ let index;
+ if(to){
+   index=order.indexOf(to);
+   if(index<0&&to!==from)return;
+   if(index<0)index=order.length;
+   else if(after)index++;
+ }else{
+   // Native end-of-column drop: insert after the last visible round in
+   // that column, not unconditionally at the end of the global order.
+   const last=snapshot[column].filter(block=>block.base!=='__highlights'&&block.base!==from).at(-1)?.base;
+   index=last?order.indexOf(last)+1:order.length;
+ }
+ order.splice(index,0,from);
+ // Freeze current columns before changing the order. Without this, height
+ // rebalancing can move an unrelated round on every drag.
+ const assigned={...(session.summaryRoundColumns||{})};
+ for(let col=0;col<2;col++){
+   for(const block of snapshot[col]){
+     if(block.base!=='__highlights')assigned[block.base]=col;
+   }
+ }
+ assigned[from]=column;
+ session.summaryRoundColumns=assigned;
+ // Native persists round AND variant IDs. Do not discard imported subround
+ // ordering when a base round is dragged.
+ session.summaryRoundOrder=order.flatMap(base=>
+   (blocks.find(block=>block.base===base)?.groups||[]).map(group=>base+'|'+group.variant));
  summarySaveAndDraw();
 }
 function summaryMoveRecord(id,target,after){
@@ -1460,7 +1491,7 @@ function summaryDropOn(e,target,col){
  if(!summaryEditMode||!summaryDrag)return;
  e.preventDefault();e.stopPropagation();
  const move=summaryDrag;summaryDrag=null;summaryClearIndicators();
- if(move.type==='round')summaryMoveRound(move.base,target,col);
+ if(move.type==='round')summaryMoveRound(move.base,typeof target==='object'?target?.base:target,col,!!target?.after);
  else if(move.type==='record'&&target&&typeof target==='object')summaryMoveRecord(move.id,target.id,target.after);
 }
 function summaryGrip(cls,label,dragInfo){
@@ -1538,9 +1569,10 @@ function summaryGroup(group,base,column){
    title.append(summaryGrip('summary-round-grip','ラウンド全体をドラッグ',{type:'round',base}));
    title.ondragover=e=>{
      if(summaryDrag?.type!=='round'||summaryDrag.base===base)return;
-     e.preventDefault();e.stopPropagation();summaryClearIndicators();box.classList.add('summary-drop-target')
+     e.preventDefault();e.stopPropagation();summaryClearIndicators();box.classList.add('summary-drop-target');
+     if(e.offsetY>title.offsetHeight/2)box.classList.add('summary-drop-after');
    };
-   title.ondrop=e=>summaryDropOn(e,base,column);
+   title.ondrop=e=>summaryDropOn(e,{base,after:box.classList.contains('summary-drop-after')},column);
  }
  if(!highlighted){
    const ico=roundIcon(group.round,group.variant);
