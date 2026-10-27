@@ -438,6 +438,68 @@ html,body,button,input,select,textarea,option{
  overflow:hidden!important;
 }
 
+
+/* Native-inspired result canvas: two balanced independent icon columns. */
+.records-panel #recordCount,.records-panel #listView,.records-panel #iconView{display:none!important}
+.records-panel .headline{align-items:center}
+.results-workspace .records-panel #records.summary-board{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start;min-height:320px;margin:0;padding:4px 0 10px}
+.summary-column{display:flex;flex-direction:column;gap:12px;min-width:0}
+.summary-group{--summary-accent:#ab84cd;position:relative;border:1px solid var(--summary-accent);border-radius:0;padding:0 6px 7px;min-width:0;background:transparent}
+.summary-group.highlights{border:double 3px #ac8fca;padding:0 5px 7px}
+.summary-group-head{display:flex;align-items:center;gap:7px;height:32px;min-width:0;color:#eee8f3;position:relative}
+.summary-group-head .round-sprite{width:32px;height:32px;flex:0 0 32px}
+.summary-group-label{font-size:14px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.summary-group.highlights .summary-group-label{color:#d9b5f2;font-size:17px}
+.summary-record{position:relative;display:grid;grid-template-columns:17px minmax(72px,1fr) 74px 60px 180px;gap:3px;align-items:center;min-height:53px;width:100%;padding:3px 0;border-top:0;transition:padding .16s ease,transform .16s ease}
+.summary-record .summary-terror-icons{grid-column:2;display:flex;flex-wrap:wrap;align-items:flex-start;align-content:center;gap:0;min-width:0}
+.summary-record .summary-terror-icons .terror-canvas{flex:0 0 32px;width:32px;height:32px;image-rendering:pixelated}
+.summary-record.unbound-row{min-height:103px;align-items:start}
+.summary-record.unbound-row .summary-terror-icons{flex-direction:column;align-items:flex-start;gap:2px;padding-top:4px}
+.summary-record .summary-terror-icons .unbound-canvas{width:38px;height:38px;flex-basis:38px}
+.summary-unbound-label{font-size:10px;line-height:1.3;max-width:136px;overflow-wrap:anywhere}
+.summary-counts{grid-column:3;font-size:17px;color:#f4eaf6;white-space:nowrap;align-self:center;text-align:center}
+.summary-new{grid-column:4;font-size:12px;color:#efe0f6;white-space:nowrap;align-self:center;text-align:center}
+.summary-map{grid-column:5;display:flex;justify-content:flex-end;align-items:center;min-width:0}
+.summary-map .map-badge{display:block!important;width:180px!important;height:36px!important;min-width:0!important;max-width:180px!important;max-height:36px!important;flex:0 0 180px!important;image-rendering:pixelated}
+.summary-record.enlarged{min-height:140px;grid-template-columns:17px minmax(198px,1fr) 94px 74px;align-items:start}
+.summary-record.enlarged .summary-terror-icons{grid-column:2;padding-top:5px}
+.summary-record.enlarged .summary-terror-icons .terror-canvas{width:64px;height:64px;flex-basis:64px}
+.summary-record.enlarged.unbound-row{min-height:185px}
+.summary-record.enlarged .summary-terror-icons .unbound-canvas{width:76px;height:76px;flex-basis:76px}
+.summary-record.enlarged .summary-counts{grid-column:3;font-size:27px;padding-top:15px}
+.summary-record.enlarged .summary-new{grid-column:4;font-size:18px;padding-top:20px}
+.summary-record.enlarged .summary-map{grid-column:2/5;grid-row:2;justify-content:flex-end}
+.summary-record.enlarged .summary-map .map-badge{width:180px!important;height:36px!important}
+.summary-record.digits-bold .summary-counts,.summary-record.digits-bold .summary-new{font-weight:700}
+.summary-grip{display:flex;align-items:center;justify-content:center;flex:0 0 14px;width:14px;font-size:17px;font-weight:700;color:#9e8bae;cursor:grab;user-select:none}
+.summary-grip:active{cursor:grabbing}
+.summary-round-grip{margin-left:0}
+.summary-record-grip{grid-column:1;grid-row:1}
+.summary-group-head:not(:has(.summary-round-grip)) .summary-group-label{margin-left:1px}
+.summary-group-head:has(.summary-round-grip) .round-sprite{margin-left:0}
+.summary-group-head:has(.summary-round-grip) .summary-group-label{font-size:13px}
+.summary-drop-target{outline:1px solid #eb536b!important;outline-offset:0;position:relative}
+.summary-record.summary-drop-target{padding-top:24px}
+.summary-record.summary-drop-after{padding-top:3px;padding-bottom:24px}
+.summary-column-end{height:35px;border:1px dashed #504058;color:#786983;font-size:10px;display:flex;align-items:center;justify-content:center;cursor:default}
+.summary-column-end.summary-drop-target{outline:2px solid #eb536b}
+.summary-empty{grid-column:1/-1;padding:50px 20px;color:#9f91ad;text-align:center}
+.summary-context-menu{position:fixed;z-index:9999;width:196px;padding:5px;border:1px solid #785b91;background:#241b30;box-shadow:0 9px 25px #000a;border-radius:4px;display:flex;flex-direction:column}
+.summary-context-menu[hidden]{display:none!important}
+.summary-menu-option{background:transparent;border:0;border-radius:2px;text-align:left;padding:8px 7px;font-size:12px;white-space:nowrap}
+.summary-menu-option:hover{background:#41304f}
+.summary-menu-option.checked{color:#ebd1ff}
+.summary-menu-divider{border-top:1px solid #594569;margin:4px 0}
+@media(max-width:1330px){
+ .summary-record{grid-template-columns:15px minmax(80px,1fr) 65px 50px 135px}
+ .summary-map .map-badge{width:135px!important;height:27px!important;flex-basis:135px!important}
+ .summary-record.enlarged{grid-template-columns:15px minmax(170px,1fr) 72px 58px}
+}
+@media(max-width:990px){
+ .results-workspace .records-panel #records.summary-board{grid-template-columns:minmax(0,1fr)}
+ .summary-record{grid-template-columns:17px minmax(100px,1fr) 74px 60px 180px}
+ .summary-map .map-badge{width:180px!important;height:36px!important;flex-basis:180px!important}
+}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
@@ -458,7 +520,7 @@ html,body,button,input,select,textarea,option{
 </section>
 <div class="results-workspace">
  <section class="panel preview-panel" aria-label="追加予定の成果"><div class="preview-topline"><span class="preview-heading" id="previewHeading">追加予定の成果</span><span class="preview-hint" id="previewHint">左の項目から入力</span></div><div class="preview-content"><div class="preview-display" id="previewDisplay" aria-live="polite"></div><div class="preview-actions"><button class="primary" id="addEntry">＋ 成果まとめに追加</button><button hidden="" id="cancelEdit">編集を解除</button></div></div></section>
- <section class="panel records-panel"><div class="headline"><div><h2>成果まとめ <span class="pill" id="recordCount">0</span></h2></div><div class="list-tools"><div class="utility-row"><button class="danger" id="deleteSession">周回を削除</button><button id="export">JSONを書き出す</button><button id="importButton">JSONを読み込む</button><input accept=".json,application/json" hidden="" id="importFile" type="file"/></div><input aria-label="記録を検索" class="field" id="search" placeholder="記録を検索" style="max-width:200px"/><button class="chip on" id="listView">テキスト</button><button class="chip" id="iconView">アイコン形式</button></div></div><div class="records" id="records"></div></section>
+ <section class="panel records-panel"><div class="headline"><div><h2>成果まとめ <span class="pill" id="recordCount">0</span></h2></div><div class="list-tools"><button class="chip" id="summaryEdit">編集</button><button class="chip" id="exportPng">PNG出力</button><div class="utility-row"><button class="danger" id="deleteSession">周回を削除</button><button id="export">JSONを書き出す</button><button id="importButton">JSONを読み込む</button><input accept=".json,application/json" hidden="" id="importFile" type="file"/></div><input aria-label="記録を検索" class="field" id="search" placeholder="記録を検索" style="max-width:200px"/><button class="chip on" id="listView">テキスト</button><button class="chip" id="iconView">アイコン形式</button></div></div><div class="records" id="records"></div></section>
 </div></div>
 </main><div class="status" id="toast" role="status"></div>
 <script src="./assets/terror_config.js"></script><script src="./assets/map_config.js"></script>
@@ -966,22 +1028,363 @@ function commit(){readCounts();if(!form.round){notify('ラウンドを選択し�
  const count=form.terrors.length;
  if(form.round==='Midnight'&&count>0&&(count!==3||form.terrors.filter(x=>x.startsWith('A')).length!==1)){notify('MidnightはClassic 2体＋Alternate 1体を選択してください');return}
  if(form.round==='Bloodbath'&&count>0&&count!==currentMax()){notify('Bloodbathの人数分のテラーを選択してください');return}
- if(disableTerrorSelection()&&count>0){notify('このラウンドではテラーを選択できません');return}const counts=['survived','players','newPlayers'].map(k=>form[k]===''?null:Number(form[k]));if(counts.some(n=>n!==null&&(!Number.isInteger(n)||n<0))){notify('人数には0以上の整数を入力してください');return}const [s,p,n]=counts;if(s!==null&&p!==null&&s>p||n!==null&&s!==null&&n>s||n!==null&&p!==null&&n>p){notify('人数の関係を確認してください（新規生存 ≤ 生存 ≤ 参加）');return}let rec={id:editing||uid(),round:form.round,variant:form.variant,terrors:[...form.terrors],map:form.map,rareChoices:{...form.rareChoices},survived:s,players:p,newPlayers:n};let arr=current().records;if(editing){const at=arr.findIndex(x=>x.id===editing);if(at!==-1)arr[at]=rec;else arr.push(rec)}else arr.push(rec);persist();clearForm();renderRecords();notify('成果を保存しました')}
+ if(disableTerrorSelection()&&count>0){notify('このラウンドではテラーを選択できません');return}const counts=['survived','players','newPlayers'].map(k=>form[k]===''?null:Number(form[k]));if(counts.some(n=>n!==null&&(!Number.isInteger(n)||n<0))){notify('人数には0以上の整数を入力してください');return}const [s,p,n]=counts;if(s!==null&&p!==null&&s>p||n!==null&&s!==null&&n>s||n!==null&&p!==null&&n>p){notify('人数の関係を確認してください（新規生存 ≤ 生存 ≤ 参加）');return}const oldRecord=editing?current().records.find(r=>r.id===editing):null;let rec={...(oldRecord||{}),id:editing||uid(),round:form.round,variant:form.variant,terrors:[...form.terrors],map:form.map,rareChoices:{...form.rareChoices},survived:s,players:p,newPlayers:n};let arr=current().records;if(editing){const at=arr.findIndex(x=>x.id===editing);if(at!==-1)arr[at]=rec;else arr.push(rec)}else arr.push(rec);persist();clearForm();renderRecords();notify('成果を保存しました')}
 function edit(rec){editing=rec.id;form={round:rec.round,variant:rec.variant||'',terrors:Array.isArray(rec.terrors)?[...rec.terrors]:[],map:rec.map||'',rareChoices:{...(rec.rareChoices||{})},survived:rec.survived??'',players:rec.players??'',newPlayers:rec.newPlayers??''};updateForm();window.scrollTo({top:100,behavior:'smooth'})}
 function remove(id){if(!confirm('この成果を削除しますか？'))return;current().records=current().records.filter(r=>r.id!==id);if(editing===id)clearForm();persist();renderRecords()}
-function renderRecords(){const root=$('records');root.replaceChildren();root.classList.toggle('viewicon',state.mode==='icon');const records=current().records;const q=$('search').value.toLowerCase();const filtered=records.filter(r=>[r.round,r.variant,r.map,mapName(r.map),...(r.terrors||[]),...(r.terrors||[]).map(id=>terrorDisplayName(id,r.round,r.rareChoices?.[id]))].join(' ').toLowerCase().includes(q)).sort((a,b)=>rounds.indexOf(a.round)-rounds.indexOf(b.round));$('recordCount').textContent=String(records.length);$('listView').classList.toggle('on',state.mode==='text');$('iconView').classList.toggle('on',state.mode==='icon');if(!filtered.length){root.append(dom('div','empty',records.length?'検索条件に一致する記録がありません':'まだ成果がありません。上の入力欄から追加できます。'));return}let lastRound=null;for(const rec of filtered){if(lastRound!==rec.round){root.append(dom('div','group-heading',rec.round.toUpperCase()));lastRound=rec.round;}const row=dom('div','record');row.draggable=true;row.dataset.id=rec.id;let grip=dom('span','grab','⋮⋮');grip.title='ドラッグして並べ替え';row.append(grip);const info=dom('div','info');
- info.append(dom('span','round',rec.round+(rec.variant?' / '+rec.variant:'')));
- if(state.mode==='icon'&&rec.terrors?.length){
-   const icons=dom('span','record-terror-icons');
-   const ids=rec.round==='Bloodbath'&&rec.variant==='EX'?Array(3).fill(rec.terrors[0]):rec.terrors;
-   for(const id of ids)icons.append(terrorIcon(id,rec.round,rec.variant,rec.rareChoices?.[id]));
-   info.append(icons);
- }const names=(rec.terrors||[]).map(id=>terrorDisplayName(id,rec.round,rec.rareChoices?.[id])).join(' + ');
- const text=dom('span','detail terror-display-name',names||'—');text.title=names;
- info.append(text);info.append(dom('span','detail',mapName(rec.map)||'—'));const num=n=>n===null||n===undefined?'?':String(n);const pair=(rec.survived===null&&rec.players===null)?'':num(rec.survived)+' / '+num(rec.players);
-const np=rec.newPlayers===null?'':'NEW '+num(rec.newPlayers);
-if(pair||np)info.append(dom('span','numbers',[pair,np].filter(Boolean).join('   ')));row.append(info);const actions=dom('div','actions');let eb=dom('button','','編集');eb.onclick=()=>edit(rec);let db=dom('button','danger','削除');db.onclick=()=>remove(rec.id);actions.append(eb,db);row.append(actions);
-row.addEventListener('dragstart',e=>{if(q){e.preventDefault();notify('並べ替えは検索を解除してから行ってください');return}e.dataTransfer.setData('text/plain',rec.id);e.dataTransfer.effectAllowed='move';row.classList.add('dragging')});row.addEventListener('dragend',()=>{row.classList.remove('dragging');root.querySelectorAll('.drop-target').forEach(n=>n.classList.remove('drop-target'))});row.addEventListener('dragover',e=>{e.preventDefault();row.classList.add('drop-target')});row.addEventListener('dragleave',()=>row.classList.remove('drop-target'));row.addEventListener('drop',e=>{e.preventDefault();row.classList.remove('drop-target');const id=e.dataTransfer.getData('text/plain'),arr=current().records,a=arr.findIndex(r=>r.id===id),b=arr.findIndex(r=>r.id===rec.id);if(a<0||b<0||a===b)return;if(arr[a].round!==arr[b].round){notify('ラウンド内のテラー順を変更できます');return;}const [v]=arr.splice(a,1);arr.splice(b,0,v);persist();renderRecords()});root.append(row)}}
+
+/* RESULTS CANVAS v2 — mirrors the native RecordsCanvas data model and interactions.
+   Two independent vertical columns, round-colored frames, compact icon entries,
+   top Highlights, inline editing, and distinct round / record drag handles. */
+let summaryEditMode=false,summaryDrag=null,summaryContextRecord=null;
+const summaryRoundImage=new Image();
+let summaryRoundImageReady=false;
+const summaryRoundPalette=new Map();
+summaryRoundImage.onload=()=>{summaryRoundImageReady=true;summaryRoundPalette.clear();renderRecords()};
+summaryRoundImage.src='./assets/round_atlas.png';
+function summaryBaseOrder(){
+ const session=current();const used=[...new Set(session.records.filter(r=>!r.summaryPinned).map(r=>r.round))];
+ const stored=Array.isArray(session.summaryRoundOrder)?session.summaryRoundOrder:[];
+ const normalized=stored.map(v=>String(v).split('|')[0]);
+ return used.sort((a,b)=>{
+   const ai=normalized.indexOf(a),bi=normalized.indexOf(b);
+   if(ai>=0||bi>=0)return (ai<0?999:ai)-(bi<0?999:bi);
+   const ar=rounds.indexOf(a),br=rounds.indexOf(b);
+   return (ar<0?999:ar)-(br<0?999:br);
+ });
+}
+function summaryRecordsByBase(){
+ const session=current(),ordered=summaryBaseOrder(),blocks=[];
+ for(const base of ordered){
+   const entries=session.records.filter(r=>!r.summaryPinned&&r.round===base);
+   const variantsInOrder=[...new Set(entries.map(r=>r.variant||''))];
+   const subs=variantsInOrder.map(variant=>({round:base,variant,records:entries.filter(r=>(r.variant||'')===variant)}));
+   blocks.push({base,groups:subs});
+ }
+ return blocks;
+}
+function summaryRowHeight(rec){
+ if(rec.summaryUppercase)return rec.round==='Unbound'?185:140;
+ if(rec.round==='Unbound')return 103;
+ return 53;
+}
+function summaryBlockHeight(block){
+ return block.groups.reduce((h,g)=>h+33+g.records.reduce((n,r)=>n+summaryRowHeight(r),0)+9,0)+7;
+}
+function summaryBuildColumns(){
+ const cols=[[],[]],height=[0,0],session=current();
+ const pinned=session.records.filter(r=>r.summaryPinned);
+ if(pinned.length){
+   const special={base:'__highlights',groups:[{round:'__highlights',variant:'',records:pinned}]};
+   cols[0].push(special);height[0]+=summaryBlockHeight(special);
+ }
+ const assigned=session.summaryRoundColumns||{};
+ for(const block of summaryRecordsByBase()){
+   const pinnedCol=assigned[block.base];
+   const col=(pinnedCol===0||pinnedCol===1)?pinnedCol:(height[0]<=height[1]?0:1);
+   cols[col].push(block);
+   height[col]+=summaryBlockHeight(block);
+ }
+ return cols;
+}
+function summaryGroupColor(round,variant=''){
+ if(round==='__highlights')return '#b79fc8';
+ const key=round+'|'+variant;
+ if(summaryRoundPalette.has(key))return summaryRoundPalette.get(key);
+ let color='#b69bc9';
+ const pos=(variant&&ROUND_SUBICON_COORDS[round+'|'+variant])||ROUND_ATLAS_COORDS[round];
+ if(summaryRoundImageReady&&pos){
+   try{
+     const canvas=document.createElement('canvas');canvas.width=32;canvas.height=32;
+     const ctx=canvas.getContext('2d',{willReadFrequently:true});
+     ctx.drawImage(summaryRoundImage,pos[0],pos[1],32,32,0,0,32,32);
+     const pix=ctx.getImageData(0,0,32,32).data;const votes=new Map();
+     for(let i=0;i<pix.length;i+=8){
+       if(pix[i+3]<120)continue;
+       const r=pix[i],g=pix[i+1],b=pix[i+2],hi=Math.max(r,g,b),lo=Math.min(r,g,b);
+       if(hi<65||hi-lo<26)continue;
+       const quant=[Math.floor(r/24)*24,Math.floor(g/24)*24,Math.floor(b/24)*24];
+       const name=quant.join(',');votes.set(name,(votes.get(name)||0)+hi-lo);
+     }
+     let most=0;for(const [value,score] of votes)if(score>most){most=score;color='rgb('+value+')'}
+   }catch{}
+ }
+ summaryRoundPalette.set(key,color);return color;
+}
+function summaryGroupTitle(group){
+ if(group.round==='__highlights')return 'Highlights';
+ if(group.variant){
+   if(group.round==='Sabotage')return 'SABOTAGE';
+   return group.variant.toUpperCase();
+ }
+ return group.round.toUpperCase();
+}
+function summaryCounts(rec){
+ const show=n=>n===-1?'?':n==null?'':String(n);
+ return {
+   pair:rec.survived==null&&rec.players==null?'':(show(rec.survived)||'-')+'/'+(show(rec.players)||'-'),
+   newcomer:rec.newPlayers==null?'':show(rec.newPlayers)
+ };
+}
+function summaryRecordIcons(rec){
+ const strip=dom('span','summary-terror-icons');
+ const values=rec.round==='Bloodbath'&&rec.variant==='EX'&&rec.terrors?.[0]?
+   [rec.terrors[0],rec.terrors[0],rec.terrors[0]]:rec.terrors||[];
+ for(const id of values.slice(0,4)){
+   strip.append(terrorIcon(id,rec.round,rec.variant,rec.rareChoices?.[id]));
+ }
+ if(!values.length)strip.append(questionIcon(rec.round,rec.variant));
+ if(rec.round==='Unbound'&&values.length)strip.append(dom('span','summary-unbound-label',terrorDisplayName(values[0],rec.round,rec.rareChoices?.[values[0]])));
+ strip.title=values.map(id=>terrorDisplayName(id,rec.round,rec.rareChoices?.[id])).join(' / ');
+ return strip;
+}
+function summaryClearIndicators(){
+ document.querySelectorAll('.summary-drop-target,.summary-drop-after').forEach(x=>{
+   x.classList.remove('summary-drop-target','summary-drop-after');
+ });
+}
+function summarySaveAndDraw(){
+ persist();renderRecords();
+}
+function summaryMoveRound(from,to,column){
+ if(!from||from==='__highlights'||(from===to&&column===undefined))return;
+ const session=current(),order=summaryBaseOrder().filter(x=>x!==from);
+ const index=to?order.indexOf(to):-1;
+ order.splice(index<0?order.length:index,0,from);
+ session.summaryRoundOrder=order;
+ if(!session.summaryRoundColumns)session.summaryRoundColumns={};
+ if(column===0||column===1)session.summaryRoundColumns[from]=column;
+ summarySaveAndDraw();
+}
+function summaryMoveRecord(id,target,after){
+ const entries=current().records;
+ const from=entries.findIndex(r=>r.id===id),to=entries.findIndex(r=>r.id===target);
+ if(from<0||to<0||from===to)return;
+ const source=entries[from],dest=entries[to];
+ if(source.round!==dest.round||(source.variant||'')!==(dest.variant||'')||!!source.summaryPinned!==!!dest.summaryPinned)return;
+ entries.splice(from,1);
+ let pos=entries.findIndex(r=>r.id===target);
+ if(after)pos++;
+ entries.splice(pos,0,source);
+ summarySaveAndDraw();
+}
+function summaryDragStart(e,data,ghost){
+ if(!summaryEditMode)return;
+ summaryDrag=data;
+ e.dataTransfer.effectAllowed='move';
+ e.dataTransfer.setData('text/plain',JSON.stringify(data));
+ if(ghost)e.dataTransfer.setDragImage(ghost,12,12);
+}
+function summaryDropOn(e,target,col){
+ if(!summaryEditMode||!summaryDrag)return;
+ e.preventDefault();e.stopPropagation();
+ const move=summaryDrag;summaryDrag=null;summaryClearIndicators();
+ if(move.type==='round')summaryMoveRound(move.base,target,col);
+ else if(move.type==='record'&&target&&typeof target==='object')summaryMoveRecord(move.id,target.id,target.after);
+}
+function summaryGrip(cls,label,dragInfo){
+ const grip=dom('span','summary-grip '+cls,'⋮⋮');
+ grip.draggable=summaryEditMode;
+ grip.setAttribute('role','button');grip.setAttribute('tabindex','0');
+ grip.title=label;grip.setAttribute('aria-label',label);
+ grip.ondragstart=e=>summaryDragStart(e,dragInfo,grip.parentElement);
+ grip.ondragend=()=>{summaryDrag=null;summaryClearIndicators()};
+ return grip;
+}
+function summaryRow(rec){
+ const row=dom('div','summary-record'+(rec.summaryUppercase?' enlarged':'')+(rec.summaryBold?' digits-bold':'')+(rec.round==='Unbound'?' unbound-row':''));
+ row.dataset.id=rec.id;
+ if(summaryEditMode){
+   const grip=summaryGrip('summary-record-grip','このラウンド内の成果を移動',{type:'record',id:rec.id});
+   row.append(grip);
+   row.ondragover=e=>{
+     if(summaryDrag?.type!=='record'||summaryDrag.id===rec.id)return;
+     const source=current().records.find(r=>r.id===summaryDrag.id);
+     if(!source||source.round!==rec.round||(source.variant||'')!==(rec.variant||'')||!!source.summaryPinned!==!!rec.summaryPinned)return;
+     e.preventDefault();e.stopPropagation();summaryClearIndicators();row.classList.add('summary-drop-target');
+     if(e.offsetY>row.offsetHeight/2)row.classList.add('summary-drop-after');
+   };
+   row.ondrop=e=>summaryDropOn(e,{id:rec.id,after:row.classList.contains('summary-drop-after')});
+ }
+ row.append(summaryRecordIcons(rec));
+ const counts=summaryCounts(rec);
+ row.append(dom('span','summary-counts',counts.pair));
+ const newBox=dom('span','summary-new',counts.newcomer?'New '+counts.newcomer:'');
+ row.append(newBox);
+ const map=dom('span','summary-map');
+ if(rec.map){const badge=mapBadge(rec.map);if(badge)map.append(badge);else map.textContent=mapName(rec.map)}
+ row.append(map);
+ row.ondblclick=()=>edit(rec);
+ row.oncontextmenu=e=>{e.preventDefault();summaryShowContext(e,rec)};
+ return row;
+}
+function summaryShowContext(event,rec){
+ summaryContextRecord=rec;
+ const menu=$('summaryContextMenu');
+ if(!menu)return;
+ menu.replaceChildren();
+ const command=(caption,fn,marked=false)=>{
+   const button=dom('button','summary-menu-option'+(marked?' checked':''),(marked?'✓　':'　　')+caption);
+   button.onclick=()=>{menu.hidden=true;fn()};menu.append(button);
+ };
+ command('入力欄に戻して編集',()=>edit(rec));
+ command('記録を削除',()=>remove(rec.id));
+ if(summaryEditMode){
+   menu.append(dom('div','summary-menu-divider'));
+   command('大文字・拡大',()=>{rec.summaryUppercase=!rec.summaryUppercase;summarySaveAndDraw()},!!rec.summaryUppercase);
+   command('太文字（人数）',()=>{rec.summaryBold=!rec.summaryBold;summarySaveAndDraw()},!!rec.summaryBold);
+   command('最上段に配置',()=>{rec.summaryPinned=!rec.summaryPinned;summarySaveAndDraw()},!!rec.summaryPinned);
+ }
+ menu.hidden=false;
+ const w=195,h=summaryEditMode?255:100;
+ menu.style.left=Math.max(8,Math.min(event.clientX,window.innerWidth-w-8))+'px';
+ menu.style.top=Math.max(8,Math.min(event.clientY,window.innerHeight-h-8))+'px';
+}
+function summaryGroup(group,base,column){
+ const highlighted=group.round==='__highlights';
+ const color=summaryGroupColor(group.round,group.variant);
+ const box=dom('section','summary-group'+(highlighted?' highlights':''));
+ box.style.setProperty('--summary-accent',color);
+ box.dataset.round=base;
+ const title=dom('div','summary-group-head');
+ if(summaryEditMode&&!highlighted){
+   title.append(summaryGrip('summary-round-grip','ラウンド全体をドラッグ',{type:'round',base}));
+   title.ondragover=e=>{
+     if(summaryDrag?.type!=='round'||summaryDrag.base===base)return;
+     e.preventDefault();e.stopPropagation();summaryClearIndicators();box.classList.add('summary-drop-target')
+   };
+   title.ondrop=e=>summaryDropOn(e,base,column);
+ }
+ if(!highlighted){
+   const ico=roundIcon(group.round,group.variant);
+   if(ico)title.append(ico);
+ }
+ const heading=dom('span','summary-group-label',summaryGroupTitle(group));
+ title.append(heading);
+ box.append(title);
+ for(const record of group.records)box.append(summaryRow(record));
+ return box;
+}
+function renderRecords(){
+ const root=$('records');root.replaceChildren();
+ root.classList.add('summary-board');root.classList.remove('viewicon');
+ const session=current(),records=session.records,q=$('search').value.trim().toLowerCase();
+ const filtered=records.filter(rec=>[
+   rec.round,rec.variant,rec.map,mapName(rec.map),
+   ...(rec.terrors||[]).map(id=>terrorDisplayName(id,rec.round,rec.rareChoices?.[id]))
+ ].join(' ').toLowerCase().includes(q));
+ $('recordCount').textContent=String(records.length);
+ if(!filtered.length){
+   root.append(dom('div','summary-empty',records.length?'一致する成果がありません':'まだ成果がありません'));return;
+ }
+ const blocks=summaryBuildColumns();
+ const cols=[dom('div','summary-column'),dom('div','summary-column')];
+ for(let i=0;i<2;i++){
+   cols[i].dataset.column=String(i);
+   for(const block of blocks[i]){
+     for(const group of block.groups){
+       const selected=group.records.filter(rec=>filtered.includes(rec));
+       if(!selected.length)continue;
+       cols[i].append(summaryGroup({...group,records:selected},block.base,i));
+     }
+   }
+   if(summaryEditMode){
+     const end=dom('div','summary-column-end','ここへラウンドを移動');
+     end.ondragover=e=>{if(summaryDrag?.type!=='round')return;e.preventDefault();summaryClearIndicators();end.classList.add('summary-drop-target')};
+     end.ondrop=e=>summaryDropOn(e,null,i);
+     cols[i].append(end);
+   }
+ }
+ root.append(...cols);
+}
+function summaryInit(){
+ const buttons=['listView','iconView'];
+ for(const id of buttons){const b=$(id);if(b)b.hidden=true}
+ if($('summaryEdit'))$('summaryEdit').onclick=()=>{
+   summaryEditMode=!summaryEditMode;
+   $('summaryEdit').textContent=summaryEditMode?'完了':'編集';
+   $('summaryEdit').classList.toggle('on',summaryEditMode);
+   renderRecords();
+ };
+ if($('exportPng'))$('exportPng').onclick=summaryExportPng;
+ let menu=$('summaryContextMenu');
+ if(!menu){menu=dom('div','summary-context-menu');menu.id='summaryContextMenu';menu.hidden=true;document.body.append(menu)}
+ document.addEventListener('pointerdown',e=>{if(!menu.contains(e.target))menu.hidden=true});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')menu.hidden=true});
+ state.mode='icon';renderRecords();
+}
+async function summaryExportPng(){
+ const session=current(), cols=summaryBuildColumns(),W=1080,pad=16,headerH=54,colW=518,gap=12;
+ try{
+   if(document.fonts?.ready)await document.fonts.ready;
+   let totalHeight=headerH+pad;
+   for(const col of cols){
+     const h=col.reduce((sum,b)=>sum+summaryBlockHeight(b),0);
+     totalHeight=Math.max(totalHeight,headerH+pad+h+pad);
+   }
+   if(totalHeight>16000)throw Error('PNGの高さ上限を超えました');
+   const output=document.createElement('canvas');output.width=W;output.height=Math.ceil(Math.max(140,totalHeight));
+   const g=output.getContext('2d');g.fillStyle='#211a2a';g.fillRect(0,0,output.width,output.height);
+   g.fillStyle='#b189d2';g.fillRect(0,0,4,headerH);
+   g.fillStyle='#efe8f3';g.font='700 22px "PixelMplus12",sans-serif';
+   g.fillText(session.name||'ToN Results',22,34);
+   for(let c=0;c<2;c++){
+     let y=headerH+pad;const x=pad+c*(colW+gap);
+     for(const block of cols[c]){
+       for(const group of block.groups){
+         const accent=summaryGroupColor(group.round,group.variant);
+         const groupH=33+group.records.reduce((n,r)=>n+summaryRowHeight(r),0)+9;
+         g.strokeStyle=accent;g.lineWidth=1;g.strokeRect(x+.5,y+.5,colW-1,groupH-1);
+         if(group.round==='__highlights')g.strokeRect(x+4.5,y+4.5,colW-9,groupH-9);
+         if(group.round!=='__highlights'){
+           const pos=(group.variant&&ROUND_SUBICON_COORDS[group.round+'|'+group.variant])||ROUND_ATLAS_COORDS[group.round];
+           if(pos&&summaryRoundImageReady)g.drawImage(summaryRoundImage,pos[0],pos[1],32,32,x+11,y+2,24,24);
+         }
+         g.fillStyle=group.round==='__highlights'?'#d8b3f9':'#efe8f3';g.font='700 16px "PixelMplus12",sans-serif';
+         g.fillText(summaryGroupTitle(group),x+(group.round==='__highlights'?15:43),y+22,colW-55);
+         let ry=y+33;
+         for(const r of group.records){
+           const h=summaryRowHeight(r),large=!!r.summaryUppercase;
+           const ids=(r.round==='Bloodbath'&&r.variant==='EX'&&r.terrors?.[0])?Array(3).fill(r.terrors[0]):(r.terrors||[]);
+           let k=0;
+           for(const id of ids.slice(0,4)){
+             const icon=cachedTerrorCanvas(id,r.round,r.variant,r.rareChoices?.[id]);
+             const side=id.startsWith('U')?(large?76:38):(large?64:32);
+             if(icon){
+               const gx=x+38+(k%3)*side,gy=ry+5+Math.floor(k/3)*(side+3);
+               g.imageSmoothingEnabled=false;g.drawImage(icon,gx,gy,side,side);
+             }
+             k++;
+           }
+           if(r.round==='Unbound'&&ids[0]){
+             g.fillStyle='#f2eaff';g.font=(large?'18':'11')+'px "PixelMplus12",sans-serif';
+             g.fillText(terrorDisplayName(ids[0],r.round,r.rareChoices?.[ids[0]]),x+38,ry+(large?111:53),195);
+           }
+           const count=summaryCounts(r);
+           g.fillStyle='#eee8f3';g.font=(r.summaryBold?'700 ':'400 ')+(large?'29':'18')+'px "PixelMplus12",sans-serif';
+           if(count.pair)g.fillText(count.pair,x+(large?260:185),ry+(large?39:29),116);
+           if(count.newcomer){
+             g.fillStyle='#ad9cb7';g.font=(large?'17':'12')+'px "PixelMplus12",sans-serif';
+             g.fillText('New',x+(large?380:279),ry+(large?33:27));
+             g.fillStyle='#eee8f3';g.font=(r.summaryBold?'700 ':'400 ')+(large?'29':'18')+'px "PixelMplus12",sans-serif';
+             g.fillText(count.newcomer,x+(large?424:308),ry+(large?39:29),75);
+           }
+           const map=r.map?mapBadge(r.map):null;
+           if(map){g.imageSmoothingEnabled=false;g.drawImage(map,x+colW-209,ry+(large?h-43:4),204,40)}
+           ry+=h;
+         }
+         y+=groupH+7;
+       }
+     }
+   }
+   const blob=await new Promise((resolve,reject)=>output.toBlob(b=>b?resolve(b):reject(new Error('PNGの生成に失敗')),'image/png'));
+   const link=document.createElement('a');const uri=URL.createObjectURL(blob);
+   link.href=uri;link.download=(session.name||'ToN_Summary').replace(/[\\/:*?"<>|]/g,'_')+'_summary.png';
+   document.body.append(link);link.click();link.remove();
+   setTimeout(()=>URL.revokeObjectURL(uri),2500);
+   notify('PNGを書き出しました');
+ }catch(err){notify('PNG出力失敗: '+err.message)}
+}
+
 $('roundButton').onclick=()=>choose('round');$('terrorButton').onclick=()=>choose('terror');$('mapButton').onclick=()=>choose('map');$('closeSelector').onclick=()=>{selector=null;$('selector').classList.remove('open')};for(const id of ['survived','players','newPlayers'])$(id).addEventListener('input',readCounts);$('addEntry').onclick=commit;$('cancelEdit').onclick=clearForm;$('search').oninput=renderRecords;
 $('addSession').onclick=()=>{let s={id:uid(),name:'周回 '+(state.sessions.length+1),records:[]};state.sessions.push(s);state.active=s.id;persist();clearForm();renderSessions()};$('deleteSession').onclick=()=>{if(state.sessions.length===1){notify('最後の周回は削除できません');return}if(!confirm('この周回と含まれる成果を削除しますか？'))return;state.sessions=state.sessions.filter(s=>s.id!==state.active);state.active=state.sessions[0].id;persist();clearForm();renderSessions()};$('session').onchange=e=>{state.active=e.target.value;clearForm();persist();renderSessions()};$('sessionName').onchange=e=>{let s=e.target.value.trim();if(!s){e.target.value=current().name;return}current().name=s;persist();renderSessions()};$('listView').onclick=()=>{state.mode='text';persist();renderRecords()};$('iconView').onclick=()=>{state.mode='icon';persist();renderRecords()};
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'ton-round-records-web',version:1,exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ToN-Records-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};$('importButton').onclick=()=>$('importFile').click();$('importFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>5e6)throw Error('ファイルが大きすぎます');const obj=JSON.parse(await file.text());const data=obj.app==='ton-round-records-web'?obj.data:obj;if(!data||!Array.isArray(data.sessions)||!data.sessions.length||data.sessions.some(s=>typeof s.id!=='string'||typeof s.name!=='string'||!Array.isArray(s.records)||s.records.some(r=>typeof r.id!=='string'||typeof r.round!=='string')))throw Error('形式が異なります');if(!confirm('現在のブラウザ内の記録を読み込んだデータで置き換えます。続けますか？'))return;state=data;state.active=state.sessions.some(s=>s.id===state.active)?state.active:state.sessions[0].id;state.mode=state.mode==='icon'?'icon':'text';persist();clearForm();renderSessions();notify('読み込みました')}catch(err){notify('読み込み失敗: '+err.message)}finally{e.target.value=''}};
@@ -998,4 +1401,5 @@ function resizeArchiveInterface(){
 }
 window.addEventListener('resize',resizeArchiveInterface,{passive:true});
 resizeArchiveInterface();
+summaryInit();
 </script></body></html>
