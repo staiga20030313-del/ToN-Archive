@@ -669,6 +669,19 @@ html,body,button,input,select,textarea,option{
 .vrc-log-row strong{font-size:13px;font-weight:700}
 .vrc-log-row small{display:block;color:#b6a9c3;font-size:11px;line-height:1.55;margin-top:3px;overflow-wrap:anywhere}
 .vrc-log-actions{padding-top:12px;font-size:12px}
+
+/* Native NumberStepper: 3 compact fields, 15px up/down buttons, 18px count glyphs. */
+.players-compact .count-stepper{display:flex;width:100%;min-width:0;height:25px;align-items:stretch}
+.players-compact .count-stepper input.field{width:0;flex:1 1 0;min-width:0;height:25px;font-size:16px;text-align:right;padding:1px 3px 1px 1px;border-radius:3px 0 0 3px;border-right:0;font-variant-numeric:tabular-nums}
+.players-compact .count-arrows{display:flex;flex:0 0 15px;width:15px;min-width:15px;flex-direction:column}
+.players-compact .count-step{display:flex;align-items:center;justify-content:center;flex:1 1 50%;height:50%;min-height:0;min-width:0;padding:0;border:1px solid var(--edge);border-radius:0;background:var(--surface,#211b2c);color:var(--text,#eee);cursor:pointer;touch-action:manipulation}
+.players-compact .count-step:first-child{border-radius:0 3px 0 0;border-bottom:0}
+.players-compact .count-step:last-child{border-radius:0 0 3px 0}
+.players-compact .count-step::before{content:"";display:block;width:9px;height:5px;background:currentColor;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.players-compact .count-step:last-child::before{transform:rotate(180deg)}
+.players-compact .count-step:hover{background:var(--edge,#48384f)}
+.players-compact .count-step:active{filter:brightness(1.25)}
+.players-compact .count-step:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
@@ -679,9 +692,9 @@ html,body,button,input,select,textarea,option{
   <div class="control"><label for="terrorButton">テラー</label><button class="pick" id="terrorButton" aria-label="テラーを選択">テラーを選択</button></div>
  </div>
  <div class="players-control"><label class="input-group-title">人数</label><div class="players-compact">
-   <div class="control"><label for="survived">生存</label><input class="field" id="survived" inputmode="numeric" autocomplete="off" maxlength="3" placeholder="?" type="text"/></div>
-   <div class="control"><label for="players">参加</label><input class="field" id="players" inputmode="numeric" autocomplete="off" maxlength="3" placeholder="?" type="text"/></div>
-   <div class="control"><label for="newPlayers">新規生存</label><input class="field" id="newPlayers" inputmode="numeric" autocomplete="off" maxlength="3" placeholder="?" type="text"/></div>
+   <div class="control"><label for="survived">生存</label><div class="count-stepper"><input class="field" id="survived" inputmode="text" autocomplete="off" maxlength="3" placeholder="-" type="text"/><div class="count-arrows"><button type="button" class="count-step" data-delta="1" tabindex="-1" aria-label="生存を増やす" title="生存 +1"></button><button type="button" class="count-step" data-delta="-1" tabindex="-1" aria-label="生存を減らす" title="生存 -1"></button></div></div></div>
+   <div class="control"><label for="players">参加</label><div class="count-stepper"><input class="field" id="players" inputmode="text" autocomplete="off" maxlength="3" placeholder="-" type="text"/><div class="count-arrows"><button type="button" class="count-step" data-delta="1" tabindex="-1" aria-label="参加を増やす" title="参加 +1"></button><button type="button" class="count-step" data-delta="-1" tabindex="-1" aria-label="参加を減らす" title="参加 -1"></button></div></div></div>
+   <div class="control"><label for="newPlayers">新規生存</label><div class="count-stepper"><input class="field" id="newPlayers" inputmode="text" autocomplete="off" maxlength="3" placeholder="-" type="text"/><div class="count-arrows"><button type="button" class="count-step" data-delta="1" tabindex="-1" aria-label="新規生存を増やす" title="新規生存 +1"></button><button type="button" class="count-step" data-delta="-1" tabindex="-1" aria-label="新規生存を減らす" title="新規生存 -1"></button></div></div></div>
  </div></div>
  <div class="control"><label for="mapButton">マップ</label><button class="pick" id="mapButton">マップを選択</button></div>
 </div>
@@ -1054,7 +1067,10 @@ function updateForm(){
  m.title=mapName(form.map)||'マップを選択';
  m.setAttribute('aria-label',m.title);
  m.classList.toggle('selected',!!form.map);
- for(const id of ['survived','players','newPlayers'])$(id).value=form[id]===-1?'?':form[id]??'';
+ for(const id of ['survived','players','newPlayers']){
+   $(id).value=form[id]===-1?'?':form[id]??'';
+   playerStepperLastValid[id]=$(id).value;
+ }
  playerCountValidation(false);
  $('addEntry').textContent=editing?'変更を保存':'＋ 成果まとめに追加';
  $('cancelEdit').hidden=!editing;
@@ -1242,6 +1258,25 @@ function parsePlayerValue(input){
  const number=Number(v);
  return number<=22?number:NaN;
 }
+
+/* .NET NumberStepper order: - (unset) -> ? (unknown) -> 0..22, no wrapping. */
+const playerStepperLastValid={survived:'',players:'',newPlayers:''};
+function stepPlayerCount(id,delta){
+ const input=$(id),parsed=parsePlayerValue(input.value);
+ const last=parsePlayerValue(playerStepperLastValid[id]);
+ const base=Number.isNaN(parsed)?last:parsed;
+ const index=base===null||Number.isNaN(base)?-2:base;
+ const next=Math.max(-2,Math.min(22,index+(delta>0?1:-1)));
+ input.value=next===-2?'-':next===-1?'?':String(next);
+ readCounts();
+}
+function commitPlayerCount(id){
+ const input=$(id);
+ if(Number.isNaN(parsePlayerValue(input.value)))input.value=playerStepperLastValid[id]||'-';
+ else if(!input.value.trim())input.value='-';
+ readCounts();
+}
+
 function playerCountValidation(showNotice=false){
  const fields=['survived','players','newPlayers'],values=fields.map(k=>parsePlayerValue(form[k]));
  const [survived,players,newcomers]=values;
@@ -1265,7 +1300,10 @@ function playerCountValidation(showNotice=false){
  return valid?values:null;
 }
 function readCounts(){
- for(const id of ['survived','players','newPlayers'])form[id]=$(id).value.trim();
+ for(const id of ['survived','players','newPlayers']){
+   form[id]=$(id).value.trim();
+   if(!Number.isNaN(parsePlayerValue(form[id])))playerStepperLastValid[id]=form[id];
+ }
  playerCountValidation(false);
  renderPendingPreview();
 }
@@ -1760,7 +1798,24 @@ async function summaryExportPng(){
    notify('PNGを書き出しました');
  }catch(err){notify('PNG出力失敗: '+err.message)}
 }
-$('roundButton').onclick=()=>choose('round');$('terrorButton').onclick=()=>choose('terror');$('mapButton').onclick=()=>choose('map');$('closeSelector').onclick=()=>{selector=null;$('selector').classList.remove('open')};for(const id of ['survived','players','newPlayers'])$(id).addEventListener('input',readCounts);$('addEntry').onclick=commit;$('cancelEdit').onclick=clearForm;$('search').oninput=renderRecords;
+$('roundButton').onclick=()=>choose('round');$('terrorButton').onclick=()=>choose('terror');$('mapButton').onclick=()=>choose('map');$('closeSelector').onclick=()=>{selector=null;$('selector').classList.remove('open')};for(const id of ['survived','players','newPlayers']){
+ const input=$(id),stepper=input.parentElement;
+ input.addEventListener('input',readCounts);
+ input.addEventListener('focus',()=>input.select());
+ input.addEventListener('blur',()=>commitPlayerCount(id));
+ input.addEventListener('keydown',e=>{
+   if(e.key==='ArrowUp'||e.key==='ArrowDown'){
+     e.preventDefault();stepPlayerCount(id,e.key==='ArrowUp'?1:-1);
+   }else if(e.key==='Enter'){e.preventDefault();commitPlayerCount(id)}
+ });
+ stepper.addEventListener('wheel',e=>{
+   if(!e.deltaY)return;
+   e.preventDefault();stepPlayerCount(id,e.deltaY<0?1:-1);
+ },{passive:false});
+ for(const button of stepper.querySelectorAll('.count-step'))
+   button.addEventListener('click',()=>stepPlayerCount(id,Number(button.dataset.delta)));
+}
+$('addEntry').onclick=commit;$('cancelEdit').onclick=clearForm;$('search').oninput=renderRecords;
 $('addSession').onclick=()=>{let s={id:uid(),name:'周回 '+(state.sessions.length+1),records:[]};state.sessions.push(s);state.active=s.id;persist();clearForm();renderSessions()};$('deleteSession').onclick=()=>{if(state.sessions.length===1){notify('最後の周回は削除できません');return}if(!confirm('この周回と含まれる成果を削除しますか？'))return;state.sessions=state.sessions.filter(s=>s.id!==state.active);state.active=state.sessions[0].id;persist();clearForm();renderSessions()};$('session').onchange=e=>{state.active=e.target.value;clearForm();persist();renderSessions()};$('sessionName').onchange=e=>{let s=e.target.value.trim();if(!s){e.target.value=current().name;return}current().name=s;persist();renderSessions()};$('listView').onclick=()=>{state.mode='text';persist();renderRecords()};$('iconView').onclick=()=>{state.mode='icon';persist();renderRecords()};
 
 /* Backward-compatible importer for the original .NET ToNRoundRecords DataFile.
