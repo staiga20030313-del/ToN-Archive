@@ -524,38 +524,50 @@ function mapGraphic(value){
 function mapBadge(value){
  const id=mapId(value),entry=MAP_DATA[id];
  if(!entry)return null;
- // The entire badge is one 102x20 canvas: no nested text/image boxes to stretch.
- const canvas=document.createElement('canvas');
- canvas.className='map-badge';
- canvas.width=102;canvas.height=20;
- canvas.title=entry.name;
- canvas.setAttribute('role','img');
- canvas.setAttribute('aria-label',entry.name);
- const ctx=canvas.getContext('2d');
- if(!ctx)return canvas;
+ const canvas=document.createElement('canvas');canvas.className='map-badge';
+ canvas.width=102;canvas.height=20;canvas.title=entry.name;
+ canvas.setAttribute('role','img');canvas.setAttribute('aria-label',entry.name);
+ const ctx=canvas.getContext('2d');if(!ctx)return canvas;
  ctx.imageSmoothingEnabled=false;
- ctx.fillStyle='#000';
- ctx.fillRect(0,0,102,20);
- const art=mapGraphic(id);
- if(art)ctx.drawImage(art.canvas,0,0);
- // As in the desktop tool, the name sits on the black left half.
- ctx.fillStyle='rgba(0,0,0,.9)';
- ctx.fillRect(1,1,49,18);
- const border=art?.color||'#eee8f3';
- ctx.strokeStyle=border;
- ctx.lineWidth=1;
- ctx.strokeRect(.5,.5,101,19);
- let px=10;
- const family='"PixelMplus12","Yu Gothic UI",sans-serif';
- for(;px>6;px-=.5){
-   ctx.font=px+'px '+family;
-   if(ctx.measureText(entry.name).width<=46)break;
+ ctx.fillStyle='#000';ctx.fillRect(0,0,102,20);
+ const art=mapGraphic(id);if(art)ctx.drawImage(art.canvas,0,0);
+ ctx.fillStyle='rgba(0,0,0,.9)';ctx.fillRect(1,1,49,18);
+ const ink=art?.color||'#eee8f3';
+ ctx.strokeStyle=ink;ctx.lineWidth=1;ctx.strokeRect(.5,.5,101,19);
+ const text=entry.name.trim(),family='"PixelMplus12","Yu Gothic UI",sans-serif';
+ // Keep normal map names at the same bold 9px size shown in the desktop tool.
+ // Split long names into TWO centered-height lines in the black nameplate.
+ const measure=(word,px)=>{ctx.font='700 '+px+'px '+family;return ctx.measureText(word).width};
+ let lines=[text];
+ if(measure(text,9)>46){
+   const words=text.split(/\s+/);
+   if(words.length>1){
+     let best=null;
+     for(let i=1;i<words.length;i++){
+       const candidate=[words.slice(0,i).join(' '),words.slice(i).join(' ')];
+       const a=measure(candidate[0],8),b=measure(candidate[1],8);
+       const score=Math.max(a,b)+Math.abs(a-b)*.13;
+       if(!best||score<best.score)best={lines:candidate,score};
+     }
+     lines=best.lines;
+   }else{
+     let best=1,score=Infinity;
+     for(let i=1;i<text.length;i++){
+       const a=measure(text.slice(0,i),8),b=measure(text.slice(i),8);
+       const v=Math.max(a,b)+Math.abs(a-b)*.13;
+       if(v<score){score=v;best=i}
+     }
+     lines=[text.slice(0,best),text.slice(best)];
+   }
  }
- ctx.font=Math.max(px,6)+'px '+family;
- ctx.textBaseline='middle';
- ctx.textAlign='left';
- ctx.fillStyle=border;
- ctx.fillText(entry.name,3,10,46);
+ const size=lines.length===1?9:8;
+ ctx.font='700 '+size+'px '+family;
+ ctx.fillStyle=ink;ctx.textAlign='left';ctx.textBaseline='middle';
+ if(lines.length===1)ctx.fillText(lines[0],3,10,46);
+ else{
+   ctx.fillText(lines[0],3,5.6,46);
+   ctx.fillText(lines[1],3,13.8,46);
+ }
  return canvas;
 }
 mapAtlasImage.onload=()=>{
