@@ -9,7 +9,7 @@
 /* Layout restored from original MainForm.LayoutApp */
 :root{--bg:#16111e;--panel:#201828;--panel2:#241d30;--edge:#574762;--text:#efe8f3;--muted:#9d91a8}
 body{background:var(--bg);font-family:'PixelMplus12','Yu Gothic UI',sans-serif;min-height:100vh}
-.shell{max-width:1150px;min-width:920px;min-height:730px;margin:auto;padding:0 22px 16px}
+.shell{max-width:1250px;min-width:920px;min-height:0;margin:auto;padding:0 22px 16px}
 .session-panel{display:none}
 .session-row{display:flex;align-items:center;gap:8px;flex:1 1 auto;min-width:0;justify-content:flex-end;flex-wrap:nowrap}
 .session-row label{font-size:12px;font-weight:700;margin-right:0;white-space:nowrap}
@@ -138,6 +138,15 @@ button:not(:disabled):active{
 }
 
 @media(prefers-reduced-motion:reduce){.tilegrid.round-layout .tile.round-tile,.tilegrid.variant-layout .tile.round-tile{transition:none}}
+
+/* Fit the archive to a maximized desktop browser without changing its internal layout. */
+@media(min-width:1280px){
+  .selector{max-height:min(50vh,500px)}
+  #tileGrid{max-height:min(44vh,430px)}
+}
+@media(max-width:940px){
+  .shell{width:100%;min-width:920px}
+}
 </style></head><body><main class="shell">
 <section class="panel entry-panel" style="position:relative"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" style="max-width:240px"></select><button id="addSession">＋ 新規周回</button></div></div><div class="entry-grid"><div class="control"><label>ROUND</label><button class="pick" id="roundButton">ラウンドを選択</button></div><div class="control"><label>TERROR</label><button class="pick" id="terrorButton">テラーを選択</button></div><div class="players-compact"><div class="control"><label>SURVIVED / 生存</label><input class="field" id="survived" min="0" placeholder="?" type="number"/></div><div class="control"><label>PLAYERS / 参加</label><input class="field" id="players" min="0" placeholder="?" type="number"/></div><div class="control"><label>NEW / 新規生存</label><input class="field" id="newPlayers" min="0" placeholder="?" type="number"/></div></div><div class="control"><label>MAP</label><button class="pick" id="mapButton">マップを選択</button></div><button class="primary" id="addEntry">＋ 成果を追加</button><button hidden="" id="cancelEdit">編集を解除</button></div>
 <div class="selector" id="selector"><div class="choice-title"><div><b id="selectorHeading">ラウンド選択</b><div class="tiny" id="selectorTip">アイコンをクリックして選択</div></div><button class="mini" id="closeSelector">閉じる ×</button></div><div id="terrorNamePreview" aria-live="polite"></div><div class="selectorbar" id="selectorTabs"></div><div class="tilegrid" id="tileGrid"></div></div>
@@ -254,4 +263,15 @@ $('roundButton').onclick=()=>choose('round');$('terrorButton').onclick=()=>choos
 $('addSession').onclick=()=>{let s={id:uid(),name:'周回 '+(state.sessions.length+1),records:[]};state.sessions.push(s);state.active=s.id;persist();clearForm();renderSessions()};$('deleteSession').onclick=()=>{if(state.sessions.length===1){notify('最後の周回は削除できません');return}if(!confirm('この周回と含まれる成果を削除しますか？'))return;state.sessions=state.sessions.filter(s=>s.id!==state.active);state.active=state.sessions[0].id;persist();clearForm();renderSessions()};$('session').onchange=e=>{state.active=e.target.value;clearForm();persist();renderSessions()};$('sessionName').onchange=e=>{let s=e.target.value.trim();if(!s){e.target.value=current().name;return}current().name=s;persist();renderSessions()};$('listView').onclick=()=>{state.mode='text';persist();renderRecords()};$('iconView').onclick=()=>{state.mode='icon';persist();renderRecords()};
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'ton-round-records-web',version:1,exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ToN-Records-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};$('importButton').onclick=()=>$('importFile').click();$('importFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>5e6)throw Error('ファイルが大きすぎます');const obj=JSON.parse(await file.text());const data=obj.app==='ton-round-records-web'?obj.data:obj;if(!data||!Array.isArray(data.sessions)||!data.sessions.length||data.sessions.some(s=>typeof s.id!=='string'||typeof s.name!=='string'||!Array.isArray(s.records)||s.records.some(r=>typeof r.id!=='string'||typeof r.round!=='string')))throw Error('形式が異なります');if(!confirm('現在のブラウザ内の記録を読み込んだデータで置き換えます。続けますか？'))return;state=data;state.active=state.sessions.some(s=>s.id===state.active)?state.active:state.sessions[0].id;state.mode=state.mode==='icon'?'icon':'text';persist();clearForm();renderSessions();notify('読み込みました')}catch(err){notify('読み込み失敗: '+err.message)}finally{e.target.value=''}};
 updateForm();renderSessions();
+
+/* The original 1150px-wide window looked miniature on a full-screen monitor.
+   Scale the complete interface continuously while reserving 24px on each side. */
+function resizeArchiveInterface(){
+  const shell=document.querySelector('.shell');
+  const viewport=window.innerWidth;
+  const scale=viewport>=1280?Math.min(1.55,Math.max(1,(viewport-48)/1250)):1;
+  shell.style.zoom=String(Math.round(scale*1000)/1000);
+}
+window.addEventListener('resize',resizeArchiveInterface,{passive:true});
+resizeArchiveInterface();
 </script></body></html>
