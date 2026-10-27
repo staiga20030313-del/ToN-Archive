@@ -650,6 +650,25 @@ html,body,button,input,select,textarea,option{
 .archive-workspace .players-compact.has-values{border-color:var(--accent)}
 .archive-workspace .players-compact input.count-invalid{outline:1px solid #ff566c!important;background:#3f1b2a!important;color:#ffb9c2}
 .archive-workspace .players-compact input{font-variant-numeric:tabular-nums}
+
+/* Local-only VRChat log import. Does not alter the main record layout. */
+#vrcLogDialog{width:min(1000px,calc(100vw - 32px));max-height:min(88vh,900px);padding:18px 20px;border:1px solid #75548f;border-radius:12px;background:#1b1528;color:#f2eaff;box-shadow:0 24px 80px #000a}
+#vrcLogDialog::backdrop{background:#080510c9}
+.vrc-log-head,.vrc-log-toolbar,.vrc-log-actions{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.vrc-log-head h2{font-size:17px;margin:0}
+.vrc-log-head button,.vrc-log-toolbar button,.vrc-log-actions button{padding:6px 10px}
+.vrc-log-help{font-size:12px;color:#c8bad5;line-height:1.6;margin:12px 0}
+.vrc-log-toolbar{justify-content:flex-end;font-size:12px;margin:10px 0}
+#vrcLogSummary{margin-right:auto;color:#d6c4e9}
+.vrc-log-rows{overflow:auto;max-height:calc(88vh - 245px);min-height:90px;border:1px solid #463352;border-radius:7px}
+.vrc-log-row{display:flex;align-items:flex-start;gap:10px;padding:9px 11px;border-bottom:1px solid #34273f;font-size:13px;cursor:pointer}
+.vrc-log-row:last-child{border-bottom:0}
+.vrc-log-row:hover{background:#30223e}
+.vrc-log-row.is-disabled{opacity:.55;cursor:default}
+.vrc-log-row input{margin-top:3px;flex:none}
+.vrc-log-row strong{font-size:13px;font-weight:700}
+.vrc-log-row small{display:block;color:#b6a9c3;font-size:11px;line-height:1.55;margin-top:3px;overflow-wrap:anywhere}
+.vrc-log-actions{padding-top:12px;font-size:12px}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
@@ -670,10 +689,19 @@ html,body,button,input,select,textarea,option{
 </section>
 <div class="results-workspace">
  <section class="panel preview-panel" aria-label="追加予定の成果"><div class="preview-topline"><span class="preview-heading" id="previewHeading">追加予定の成果</span><span class="preview-hint" id="previewHint">左の項目から入力</span></div><div class="preview-content"><div class="preview-display" id="previewDisplay" aria-live="polite"></div><div class="preview-actions"><button class="primary" id="addEntry">＋ 成果まとめに追加</button><button hidden="" id="cancelEdit">編集を解除</button></div></div></section>
- <section class="panel records-panel"><div class="headline"><div><h2>成果まとめ <span class="pill" id="recordCount">0</span></h2></div><div class="list-tools"><button class="chip" id="summaryEdit">編集</button><button class="chip" id="exportPng">PNG出力</button><div class="utility-row"><button class="danger" id="deleteSession">周回を削除</button><button id="export">JSONを書き出す</button><button id="importButton">JSONを読み込む</button><input accept=".json,application/json" hidden="" id="importFile" type="file"/></div><input aria-label="記録を検索" class="field" id="search" placeholder="記録を検索" style="max-width:200px"/><button class="chip on" id="listView">テキスト</button><button class="chip" id="iconView">アイコン形式</button></div></div><div class="records" id="records"></div></section>
+ <section class="panel records-panel"><div class="headline"><div><h2>成果まとめ <span class="pill" id="recordCount">0</span></h2></div><div class="list-tools"><button class="chip" id="summaryEdit">編集</button><button class="chip" id="exportPng">PNG出力</button><div class="utility-row"><button class="danger" id="deleteSession">周回を削除</button><button id="export">JSONを書き出す</button><button id="importButton">JSONを読み込む</button><input accept=".json,application/json" hidden="" id="importFile" type="file"/><button id="vrcLogButton" title="VRChatのoutput_log_*.txtをローカルで解析">VRCログ</button><input id="vrcLogFile" type="file" accept=".txt,text/plain" hidden/></div><input aria-label="記録を検索" class="field" id="search" placeholder="記録を検索" style="max-width:200px"/><button class="chip on" id="listView">テキスト</button><button class="chip" id="iconView">アイコン形式</button></div></div><div class="records" id="records"></div></section>
 </div></div>
-</main><div class="status" id="toast" role="status"></div>
+</main>
+<dialog id="vrcLogDialog" aria-labelledby="vrcLogTitle">
+  <div class="vrc-log-head"><h2 id="vrcLogTitle">VRCログから成果を取り込む</h2><button id="vrcLogClose" type="button">閉じる</button></div>
+  <p class="vrc-log-help">ログはブラウザ内で解析します。推定人数は確定値ではありません。未対応のテラーIDやMAPは空欄のまま取り込み、後から編集できます。</p>
+  <div class="vrc-log-toolbar"><span id="vrcLogSummary"></span><button id="vrcLogSelectAll" type="button">全選択</button><button id="vrcLogSelectNone" type="button">選択解除</button></div>
+  <div id="vrcLogRows" class="vrc-log-rows"></div>
+  <div class="vrc-log-actions"><span id="vrcLogSelectedCount">0件選択</span><button id="vrcLogImport" class="primary" type="button" disabled>選択した成果を反映</button></div>
+</dialog>
+<div class="status" id="toast" role="status"></div>
 <script src="./assets/terror_config.js"></script><script src="./assets/map_config.js"></script>
+<script src="./assets/vrc_log_import.js"></script>
 <script>
 'use strict';
 const KEY='ton-round-records-web-v1';
@@ -1794,6 +1822,92 @@ function recognizeImportedData(obj){
  return {data:validateWebImport(obj),native:false};
 }
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'ton-round-records-web',version:1,exportedAt:new Date().toISOString(),data:state},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ToN-Records-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};$('importButton').onclick=()=>$('importFile').click();$('importFile').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>15e6)throw Error('ファイルが大きすぎます');const obj=JSON.parse(await file.text());const imported=recognizeImportedData(obj),data=imported.data;if(!confirm((imported.native?'元の.NET版から '+data.sessions.length+' 周回を変換しました。\n':'')+'現在のブラウザ内の記録を読み込んだデータで置き換えます。続けますか？'))return;state=data;state.active=state.sessions.some(s=>s.id===state.active)?state.active:state.sessions[0].id;state.mode=state.mode==='text'?'text':'icon';state.summaryViewVersion=2;persist();clearForm();renderSessions();notify(imported.native?'元ツールの記録を取り込みました':'読み込みました')}catch(err){notify('読み込み失敗: '+err.message)}finally{e.target.value=''}};
+
+/* The original WinForms importer reads VRChat logs from disk. A web page may
+   only read files explicitly selected by the user, never the AppData folder. */
+let vrcLogScan=null;
+function vrcLogRecord(round){
+ return {
+   id:uid(),round:round.round,variant:round.variant||'',
+   terrors:[...round.terrors],map:round.map||'',rareChoices:{},
+   survived:round.estimatedSurvivors??-1,
+   players:round.estimatedPlayers??-1,newPlayers:null,
+   sourceLogKey:round.sourceLogKey,logRawTerrors:round.rawKillerIds,
+   logRoundSeconds:round.durationSeconds,createdAt:round.start
+ };
+}
+function vrcLogRender(){
+ const rows=$('vrcLogRows');rows.replaceChildren();
+ const existing=new Set(current().records.map(r=>String(r.sourceLogKey||'').toLowerCase()).filter(Boolean));
+ const candidates=vrcLogScan?.rounds||[];
+ $('vrcLogSummary').textContent=(vrcLogScan?.file||'')+' · '+candidates.length+'ラウンド';
+ for(const r of candidates){
+   const duplicate=existing.has(r.sourceLogKey.toLowerCase()),unsupported=!r.round;
+   const disabled=duplicate||unsupported;
+   const label=dom('label','vrc-log-row'+(disabled?' is-disabled':''));
+   const check=dom('input');check.type='checkbox';check.disabled=disabled;check.dataset.sourceKey=r.sourceLogKey;
+   check.addEventListener('change',vrcLogUpdateSelection);
+   const details=dom('span');
+   const title=dom('strong','',[r.start.replace('T',' '),r.round||'未対応ラウンド',r.variant,r.map?mapName(r.map):(r.mapName||'MAP不明')].filter(Boolean).join(' / '));
+   const status=duplicate?'取込済み':unsupported?'ラウンド未対応':r.status;
+   const counts='推定人数 '+(r.estimatedSurvivors??'?')+'/'+(r.estimatedPlayers??'?');
+   const terrors=r.terrors.length?r.terrors.join(', '):r.unmappedKillerIds.length?'未対応テラーID: '+r.unmappedKillerIds.join(', '):'テラー未確定';
+   const meta=dom('small','',status+' · '+counts+' · '+terrors+
+     (r.durationSeconds==null?'':' · '+r.durationSeconds+'秒')+
+     (!r.map?' · MAP要確認':''));
+   details.append(title,meta);label.append(check,details);rows.append(label);
+ }
+ vrcLogUpdateSelection();
+}
+function vrcLogUpdateSelection(){
+ const checks=[...$('vrcLogRows').querySelectorAll('input[type="checkbox"]')];
+ const count=checks.filter(c=>c.checked&&!c.disabled).length;
+ $('vrcLogSelectedCount').textContent=count+'件選択';
+ $('vrcLogImport').disabled=count===0;
+}
+$('vrcLogButton').onclick=()=>{
+ if(!window.TON_VRC_LOG){notify('ログ解析機能を読み込めませんでした');return}
+ $('vrcLogFile').click();
+};
+$('vrcLogFile').onchange=async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+   if(file.size>50*1024*1024)throw Error('ログが50MBを超えています');
+   const data=window.TON_VRC_LOG.analyze(await file.text(),file.name,MAP_DATA);
+   vrcLogScan={...data,file:file.name};
+   vrcLogRender();
+   if(!$('vrcLogDialog').open)$('vrcLogDialog').showModal();
+   if(!data.rounds.length)notify('ラウンドを検出できませんでした');
+ }catch(error){notify('ログ解析失敗: '+error.message)}
+ finally{e.target.value=''}
+};
+$('vrcLogClose').onclick=()=>$('vrcLogDialog').close();
+$('vrcLogSelectAll').onclick=()=>{
+ for(const box of $('vrcLogRows').querySelectorAll('input[type="checkbox"]'))if(!box.disabled)box.checked=true;
+ vrcLogUpdateSelection();
+};
+$('vrcLogSelectNone').onclick=()=>{
+ for(const box of $('vrcLogRows').querySelectorAll('input[type="checkbox"]'))box.checked=false;
+ vrcLogUpdateSelection();
+};
+$('vrcLogImport').onclick=()=>{
+ if(!vrcLogScan)return;
+ const selected=new Set([...$('vrcLogRows').querySelectorAll('input[type="checkbox"]')]
+   .filter(c=>c.checked&&!c.disabled).map(c=>c.dataset.sourceKey));
+ if(!selected.size)return;
+ const existing=new Set(current().records.map(r=>String(r.sourceLogKey||'').toLowerCase()).filter(Boolean));
+ let added=0;
+ for(const round of vrcLogScan.rounds){
+   if(!selected.has(round.sourceLogKey)||!round.round||existing.has(round.sourceLogKey.toLowerCase()))continue;
+   current().records.push(vrcLogRecord(round));existing.add(round.sourceLogKey.toLowerCase());added++;
+ }
+ if(added){
+   persist();renderRecords();
+   notify(added+'件のログ成果を追加しました（人数は推定値）');
+ }
+ vrcLogRender();
+};
+
 updateForm();renderSessions();
 
 /* The original 1150px-wide window looked miniature on a full-screen monitor.
