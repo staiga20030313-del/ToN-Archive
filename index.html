@@ -20,21 +20,21 @@ body{background:var(--bg);font-family:'PixelMplus12','Yu Gothic UI',sans-serif;m
 .utility-row{position:absolute;right:0;top:68px;display:flex;gap:6px;z-index:1}
 .utility-row button{font-size:10px;padding:2px 7px;opacity:.7}
 .panel{margin-bottom:16px;border-radius:6px;box-shadow:none;background:#211a2a;padding:15px}
-.entry-panel{height:165px;z-index:5;overflow:visible}
-.entry-panel>.headline{margin-bottom:30px;height:29px}
-.entry-panel .headline h2,.records-panel .headline h2{font-size:18px;letter-spacing:0}
-.entry-grid{display:flex!important;align-items:flex-start;gap:12px;height:58px}
+.entry-panel{height:108px;z-index:5;overflow:visible;padding:9px 15px 10px}
+.entry-panel>.headline{margin-bottom:8px;height:22px}
+.entry-panel .headline h2{font-size:16px;letter-spacing:0}.records-panel .headline h2{font-size:18px;letter-spacing:0}
+.entry-grid{display:flex!important;align-items:flex-start;gap:10px;height:46px}
 .entry-grid>.control{display:flex;flex-direction:column;gap:0}
 .entry-grid>.control label{display:none}
 .entry-grid>.control:first-child{width:75px;flex:0 0 75px}
 .entry-grid>.control:nth-child(2){flex:0 0 104px;width:104px}
 .entry-grid>.control:nth-child(4){flex:1 1 175px;min-width:155px;max-width:245px}
-.entry-grid .pick{height:58px;min-height:58px;padding:4px 6px;text-align:center;border-radius:6px;white-space:normal;font-size:11px}
-.players-compact{width:250px;flex:0 0 250px;display:flex;gap:3px;border:1px solid var(--edge);border-radius:5px;height:58px;padding:4px 5px;align-items:center}
+.entry-grid .pick{height:46px;min-height:46px;padding:3px 6px;text-align:center;border-radius:6px;white-space:normal;font-size:11px}
+.players-compact{width:250px;flex:0 0 250px;display:flex;gap:3px;border:1px solid var(--edge);border-radius:5px;height:46px;padding:2px 5px;align-items:center}
 .players-compact .control{flex:1;min-width:0;gap:3px}
-.players-compact label{font-size:10px;letter-spacing:0;text-align:center;white-space:nowrap}
-.players-compact input{font-size:13px;text-align:center;padding:4px 2px;height:28px}
-.entry-grid #addEntry{height:59px;min-width:90px;flex:0 0 90px;font-size:14px;padding:4px}
+.players-compact label{font-size:9px;line-height:12px;letter-spacing:0;text-align:center;white-space:nowrap}
+.players-compact input{font-size:13px;text-align:center;padding:2px;height:25px}
+.entry-grid #addEntry{height:46px;min-width:90px;flex:0 0 90px;font-size:13px;padding:3px}
 .entry-grid #cancelEdit{position:absolute;right:23px;top:12px;padding:3px 8px;font-size:11px}
 .selector{position:absolute;left:0;top:100%;width:100%;margin:0;padding:12px;background:#241d31;border:1px solid var(--edge);border-radius:0 0 7px 7px;z-index:25;box-shadow:0 9px 20px #0008;max-height:min(72vh,680px);overflow:auto;transform-origin:top;animation:dropdown .2s ease-out}
 @keyframes dropdown{from{opacity:.5;transform:scaleY(.85)}to{opacity:1;transform:scaleY(1)}}
