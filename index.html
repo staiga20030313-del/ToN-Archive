@@ -161,10 +161,12 @@ button:not(:disabled):active{
 .tilegrid.terror-layout .tile.rare-active::after{content:'';position:absolute;right:1px;bottom:1px;width:5px;height:5px;background:#f2df7a;pointer-events:none}
 .tilegrid.terror-layout .tile{position:relative}
 .tilegrid.terror-layout.combined-layout{grid-auto-flow:row}
-.tilegrid.terror-layout.unbound-layout{grid-template-columns:repeat(3,minmax(170px,1fr))!important;width:100%;gap:4px 10px!important}
-.tilegrid.terror-layout.unbound-layout .tile.unbound{width:100%;height:42px;min-height:42px;display:flex;flex-direction:row;padding:2px 4px}
+.tilegrid.terror-layout.unbound-layout{grid-template-columns:repeat(6,minmax(130px,1fr))!important;grid-auto-rows:42px!important;width:100%;gap:3px 8px!important}
+.tilegrid.terror-layout.unbound-layout .tile.unbound{width:100%;height:42px;min-height:42px;display:flex;flex-direction:row;justify-content:flex-start;padding:2px 4px;gap:5px}
 .record-terror-icons{display:inline-flex;align-items:center;gap:4px}
 .record-terror-icons .terror-canvas{width:32px;height:32px}
+.terror-canvas.unbound-canvas,.record-terror-icons .terror-canvas.unbound-canvas{width:38px;height:38px;flex-basis:38px}
+.tile.unbound .terror-name{font-size:10px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 </style></head><body><main class="shell">
 <section class="panel entry-panel" style="position:relative"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" style="max-width:240px"></select><button id="addSession">＋ 新規周回</button></div></div><div class="entry-grid"><div class="control"><label>ROUND</label><button class="pick" id="roundButton" aria-label="ラウンドを選択">?</button></div><div class="control"><label>TERROR</label><button class="pick" id="terrorButton">テラーを選択</button></div><div class="players-compact"><div class="control"><label>SURVIVED / 生存</label><input class="field" id="survived" min="0" placeholder="?" type="number"/></div><div class="control"><label>PLAYERS / 参加</label><input class="field" id="players" min="0" placeholder="?" type="number"/></div><div class="control"><label>NEW / 新規生存</label><input class="field" id="newPlayers" min="0" placeholder="?" type="number"/></div></div><div class="control"><label>MAP</label><button class="pick" id="mapButton">マップを選択</button></div><button class="primary" id="addEntry">＋ 成果を追加</button><button hidden="" id="cancelEdit">編集を解除</button></div>
@@ -178,7 +180,7 @@ button:not(:disabled):active{
 const KEY='ton-round-records-web-v1';
 const rounds=['Classic','Alternate','8 Pages','Fog','Ghost','Punished','Cracked','Sabotage','Bloodbath','Midnight','Unbound','Moon','Other'];
 const TERROR_NAMES={C:["Huggy", "Corrupted Toys", "Demented Spongebob", "Specimen 8", "HER", "Tails Doll", "Black Sun", "Aku Ball", "Ao Oni", "Toren's Shadow", "[CENSORED]", "WhiteNight", "An Arbiter", "Specimen 5", "Comedy", "Purple Guy", "Spongefly Swarm", "Hush", "MopeMope", "Sawrunner", "Imposter", "Something", "Squidward", "Starved", "The Painter", "The Guidance", "With Many Voices", "Nextbots", "Harvest", "Smileghost", "Karol_Corpse", "MX", "Big Bird", "Dev Bytes", "Mario Has Logged In", "Luigi & Luigi Dolls", "V2", "Withered Bonnie", "The Boys", "Something Wicked", "Seek", "Rush", "Sonic", "Bad Batter", "Signus", "Mirror", "Legs", "Mona & The Mountain", "Judgement Bird", "Slender", "Maul-A-Child", "Garten Goers", "Don't Touch Me", "Specimen 2", "Specimen 10", "The Lifebringer", "Pale Association", "The Old Man", "Toy Enforcer", "TBH", "Doombox", "Christian Brutal Sniper", "Nosk", "Apocrean Harvester", "Arkus", "Cartoon Cat", "Wario Apparition", "Shinto", "Hell Bell", "Security", "The Swarm", "Shiteyanyo", "Bacteria", "Tiffany", "HoovyDundy", "Haket", "Akumii-Kari", "Lunatic Cultist", "Sturm", "Punishing Bird", "Prisoner", "Red Bus", "Waterwraith", "Astrum Aureus", "Snarbolax", "All-Around-Helpers", "Sakuya Izayoi", "Arrival", "Miros Birds", "BFF", "Scavenger", "Tinky Winky", "Tricky", "Yolm", "Red Fanatic", "Dr.Tox", "Ink Demon", "Retep", "Those Olden Days", "S.O.S", "Bigger Boot", "The Pursuer", "Spamton", "Immortal Snail", "Charlotte", "Herobrine", "Peepy", "The Jester", "Wild Yet Curious Creature", "Manti", "Horseless Headless Horsemann", "Ghost Girl", "Cubor's Revenge", "The Origin", "Beyond", "Terror of Nowhere", "Deleted", "Poly", "Dog Mimic", "Warden", "Express Train To Hell", "Killer Fish", "FOX Squad", "Time Ripper", "This Killer Does Not Exist", "Malicious Twins", "Parhelion's Victims", "Bed Mecha", "Killer Rabbit", "Random Flying Knife", "MissingNo", "Living Shadow", "The Plague Doctor", "The Rat"],A:["Feddys", "TBH Spy", "Tragedy", "Voidwalker", "Paradise Bird", "Restless Creator", "Lord's Signal", "Joy", "MR. MEGA", "Eggman's Announcement", "Knight of Toren", "Decayed Sponge", "Parhelion", "얀샋ㄷ요무", "Army in Black", "Bliss", "Glaggle Gang", "WHITEFACE", "SM64.Z64", "The Red Mist", "Sanic", "S.T.G.M.", "Convict Squad", "Fusion Pilot", "Dev Maulers", "Lisa", "Apathy", "Angry Munci", "Ambush", "Roblander", "Walpurgisnacht", "Sakuya The Ripper", "Teuthida", "Judas", "Try Not To Touch Me", "The Observation"],U:["Guidance & The Booboo's", "Red VS Blue", "Third Trumpet", "Higher Beings", "Forest Guardians", "Quadruple Sponge", "Your Best Friends", "Hotel Monsters", "Squibb Squad", "Garden Rejects", "Judgement Day", "Me and My Shadow", "Meltdown", "Faceless Mafia", "Mansion Monsters", "Copyright Infringement", "Purple Bros", "Scavengers", "Life & Death", "Labyrinth", "Spiteful Shadows", "Triple Munci", "Daycare", "Huggy Horde", "Infection", "Triple Hush", "[CENSORED]", "Byte Horde", "SawMarathon", "TAKE THE NAMI CHALLENGE", "Thunderstorm", "END OF THE WORLD", "Fragmented Memories", "Mona & Mona & Mona & Mona", "Seekers", "Nugget Squad", "Saul's Goodmen", "Something Old. Something New", "POV: Bug", "Punishing Birdemic", "Double Ao Oni", "Too Many Voices", "Memory Crypts", "Zumbo Sauce", "Freaks", "Lunatic Cult", "Transportation Trio & The Drifter", "Father Son Bonding", "WHAT IS MY NAME", "Glaggleland Cremators", "Triple Signus", "Triple Akumii Kari", "Black & White", "[LESSER CENSORED]", "Blue Monsters", "Drones", "Scrapyard Takers", "Luigi Dolls", "Meteor Shower", "Triple TBH", "Lost Souls", "Ballin", "Reunion", "Angels", "Ordinary Apocalypse Bird", "Pack of Wild Yet Curious", "ToN X SlashCo Collab", "Pack of Yolm", "Threepy", "???", "Delete He", "Spamton Spam", "Death From Above", "It Came From Bus To Nowhere", "Zombie Apocalypse", "Eating Contest", "Triple Clockeys", "Triple Killer Fish", "Lethal League", "Trollage", "Mopemopemopemopemopemope", "Triple Trouble", "Triple Living Shadow", "Beyond's Masks"]};
-function terrorName(id){const a=TERROR_NAMES[id?.[0]];const i=Number(id?.slice(1))-1;return a?.[i]||id||"";}
+function terrorName(id){if(id?.startsWith('U'))return window.TON_TERROR_CONFIG?.unboundNames?.[id]||id;const a=TERROR_NAMES[id?.[0]];const i=Number(id?.slice(1))-1;return a?.[i]||id||'';}
 const ROUND_ATLAS_COORDS={"Classic":[32,320],"Alternate":[320,320],"8 Pages":[352,320],"Fog":[64,320],"Ghost":[224,320],"Punished":[96,320],"Cracked":[160,320],"Sabotage":[128,320],"Bloodbath":[192,320],"Midnight":[288,320],"Unbound":[256,320],"Moon":[320,288],"Other":[352,288]};
 const ROUND_SUBICON_COORDS={"Sabotage|Sabotage 1":[480,320],"Sabotage|Sabotage 2":[448,320],"Bloodbath|BB":[512,320],"Bloodbath|DT":[544,320],"Bloodbath|EX":[576,320],"Moon|Moon 1":[0,288],"Moon|Moon 2":[32,288],"Moon|Moon 3":[64,288],"Moon|Moon 4":[96,288],"Other|Other 1":[160,288],"Other|Other 2":[256,288],"Other|Other 3":[384,320],"Other|Other 4":[416,320],"Other|Other 5":[128,288]};
 const variants={'Sabotage':['Sabotage 1','Sabotage 2'],'Bloodbath':['BB','DT','EX'],'Moon':['Moon 1','Moon 2','Moon 3','Moon 4'],'Other':['Other 1','Other 2','Other 3','Other 4','Other 5']};
@@ -201,9 +203,9 @@ function roundIcon(round, variant=''){
 
 /* Terror/variant crops and per-round rules are taken directly from the desktop catalog. */
 const TERR=window.TON_TERROR_CONFIG||{coords:{},colorRules:[],disabled:{},protectedPixels:{},special:{},rare:{}};
-const terrorSheet=new Image();
+const terrorSheet=new Image(),unboundSheet=new Image();
 const recolorCache=new Map();
-let terrorSheetReady=false;
+let terrorSheetReady=false,unboundSheetReady=false;
 const roundKey=(round=form.round)=>({'8 Pages':'8pages'}[round]||String(round||'').toLowerCase());
 const rareOptions=(id,round=form.round)=>TERR.rare[roundKey(round)]?.[id]||[];
 const specialFor=(id,round=form.round)=>TERR.special[roundKey(round)]?.[id]||null;
@@ -232,17 +234,19 @@ function iconKey(id,round=form.round,rareChoice=null){
  return choice&&opts.includes(choice)?choice:(specialFor(id,round)||id);
 }
 function cachedTerrorCanvas(id,round=form.round,variant=form.variant,rareChoice=null){
- if(!terrorSheetReady)return null;
+ const isUnbound=id.startsWith('U');
+ if(isUnbound&&!unboundSheetReady||!isUnbound&&!terrorSheetReady)return null;
  const cropKey=iconKey(id,round,rareChoice);
- const point=TERR.coords[cropKey]||TERR.coords[id];
+ const point=isUnbound?(TERR.unboundCoords?.[cropKey]||TERR.unboundCoords?.[id]):(TERR.coords[cropKey]||TERR.coords[id]);
  if(!point)return null;
  const key=[id,cropKey,colorKey(round,variant)].join(':');
  if(recolorCache.has(key))return recolorCache.get(key);
- const canvas=document.createElement('canvas');canvas.width=32;canvas.height=32;
+ const canvas=document.createElement('canvas'),size=isUnbound?38:32;
+ canvas.width=size;canvas.height=size;
  const ctx=canvas.getContext('2d',{willReadFrequently:true});
  ctx.imageSmoothingEnabled=false;
- ctx.drawImage(terrorSheet,point[0],point[1],32,32,0,0,32,32);
- const rule=colorRule(round,variant),alternate=id.startsWith('A');
+ ctx.drawImage(isUnbound?unboundSheet:terrorSheet,point[0],point[1],size,size,0,0,size,size);
+ const rule=isUnbound?null:colorRule(round,variant),alternate=id.startsWith('A');
  if(rule&&(rule.Scope==='Both'||rule.Scope===(alternate?'Alternate':'Classic'))){
    const c=rgb(rule.C),f=rgb(rule.F);
    const original1=rgb(alternate?rule.D:rule.A);
@@ -253,7 +257,6 @@ function cachedTerrorCanvas(id,round=form.round,variant=form.variant,rareChoice=
      for(let i=0;i<1024;i++){
        if(protectedSet.has(i))continue;
        const k=i*4;if(!data[k+3])continue;
-       // Compare only the source pixels. Do not chain the two substitutions.
        const replacement=original1&&c&&data[k]===original1[0]&&data[k+1]===original1[1]&&data[k+2]===original1[2]?c:
          original2&&f&&data[k]===original2[0]&&data[k+1]===original2[1]&&data[k+2]===original2[2]?f:null;
        if(replacement){data[k]=replacement[0];data[k+1]=replacement[1];data[k+2]=replacement[2]}
@@ -265,18 +268,18 @@ function cachedTerrorCanvas(id,round=form.round,variant=form.variant,rareChoice=
  return canvas;
 }
 function questionIcon(){
- const c=document.createElement('canvas');c.width=32;c.height=32;c.className='question-icon';
- const ctx=c.getContext('2d');
- ctx.fillStyle='#07050a';ctx.fillRect(0,0,32,32);
- ctx.fillStyle='#b855d9';
- const pattern=['01110','10001','00001','00010','00100','00000','00100'];
- for(let y=0;y<pattern.length;y++)for(let x=0;x<5;x++)if(pattern[y][x]==='1')ctx.fillRect(6+x*4,3+y*4,4,4);
- return c;
+ const node=dom('span','round-sprite question-icon');
+ node.style.backgroundPosition='0px 0px';
+ node.setAttribute('aria-hidden','true');
+ return node;
 }
 function terrorIcon(id,round=form.round,variant=form.variant,rareChoice=null){
  const rendered=cachedTerrorCanvas(id,round,variant,rareChoice);
  if(!rendered)return dom('span','terror-icon missing-terror-icon',id.replace(/^[A-Z]+/,''));
- const c=document.createElement('canvas');c.className='terror-canvas';c.width=32;c.height=32;
+ const c=document.createElement('canvas');
+ const size=id.startsWith('U')?38:32;
+ c.className='terror-canvas'+(size===38?' unbound-canvas':'');
+ c.width=size;c.height=size;
  c.getContext('2d').drawImage(rendered,0,0);
  c.setAttribute('aria-hidden','true');
  return c;
@@ -311,6 +314,9 @@ terrorSheet.onload=()=>{
 };
 terrorSheet.onerror=()=>notify('テラー画像の読込に失敗しました');
 terrorSheet.src='./assets/round_atlas.png';
+unboundSheet.onload=()=>{unboundSheetReady=true;recolorCache.clear();updateForm();if(selector==='terror')renderSelector();renderRecords()};
+unboundSheet.onerror=()=>notify('Unboundの画像を読み込めませんでした');
+unboundSheet.src='./assets/unbound_atlas.png';
 
 function renderSessions(){$('session').replaceChildren(...state.sessions.map(s=>{const o=dom('option','',s.name);o.value=s.id;return o}));$('session').value=state.active;$('sessionName').value=current().name;renderRecords()}
 function currentMax(){return form.round==='Bloodbath'?(form.variant==='EX'?1:form.variant==='DT'?2:3):form.round==='Midnight'?3:form.round==='Moon'||disableTerrorSelection()?0:form.round==='Unbound'?1:1}
@@ -356,7 +362,7 @@ function renderSelector(){
  grid.className='tilegrid'+(type==='map'?' map-layout':'')+(type==='terror'?' terror-layout':'')+(type==='terror'&&combined?' combined-layout':'')+(type==='round'?' round-layout':'')+(type==='variant'?' variant-layout':'')+(type==='terror'&&form.round==='Unbound'?' unbound-layout':'');
  const values=type==='round'?rounds:type==='variant'?variants[form.round]||[]:type==='terror'?normalizedTerrorList():type==='map'?Array.from({length:74},(_,i)=>'MAP '+String(i+1).padStart(2,'0')):[];
  $('selectorTip').textContent=type==='terror'?('選択 '+form.terrors.length+' / '+currentMax()+'　右クリックで低確率バリアント切替'):type==='map'?'マップを選択':'';
- if(type==='terror'&&form.round==='Unbound')$('selectorTip').textContent='Unbound のオリジナル画像素材は未設定のため、番号を表示しています';
+ if(type==='terror'&&form.round==='Unbound')$('selectorTip').textContent='Unbound 84体　右クリックで専用バリアント切替';
  for(const [tileIndex,v] of values.entries()){
    const selected=type==='terror'?form.terrors.includes(v):type==='round'?form.round===v:type==='variant'?form.variant===v:form.map===v;
    const b=dom('button','tile'+(selected?' active':'')+(type==='map'?' map':'')+(type==='terror'&&v.startsWith('U')?' unbound':'')+(type==='round'||type==='variant'?' round-tile':''));
@@ -403,6 +409,10 @@ function renderSelector(){
      }else if(v.startsWith('E')){
        b.style.gridColumn='1';
        b.style.gridRow=String(Number(v.slice(1)));
+     }else if(v.startsWith('U')){
+       const n=Number(v.slice(1))-1,pair=Math.floor(n/2);
+       b.style.gridColumn=String(1+Math.floor(pair/14)*2+(n%2));
+       b.style.gridRow=String(1+pair%14);
      }
    }else b.textContent=v;
    if(type==='map'&&tileIndex>=72)b.style.gridColumn=String(tileIndex-72+8);
