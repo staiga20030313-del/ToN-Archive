@@ -760,8 +760,13 @@ function mapBadge(value){
  const font=(px)=>{ctx.font='700 '+px+'px '+family};
  const measure=(str,px)=>{font(px);return ctx.measureText(str).width};
  let lines=null,size=21;
- for(let px=21;px>=16;px--){
-   if(measure(text,px)<=textWidth){size=px;lines=[text];break}
+ // The old fallback shrank long multi-word names to unreadable single lines.
+ // Keep short labels at 21px; wrap the rest instead of reducing their width.
+ if(measure(text,21)<=textWidth)lines=[text];
+ else if(!text.includes(' ')){
+   for(let px=20;px>=18;px--){
+     if(measure(text,px)<=textWidth){size=px;lines=[text];break}
+   }
  }
  if(!lines){
    const words=text.split(' '),splits=[];
