@@ -53,7 +53,7 @@ body{background:var(--bg);font-family:'PixelMplus12','Yu Gothic UI',sans-serif;m
 @media(max-width:940px){.shell{margin:0}.session-row #sessionName{width:260px}}
 
 /* Original .NET geometry: Classic/Alternate 32×32px icons, 4px gaps; Unbound 38×38px */
-.tilegrid.terror-layout{grid-template-columns:repeat(11,32px)!important;grid-auto-rows:32px;gap:4px!important;width:max-content;max-width:100%;justify-content:start;overflow:auto;max-height:min(72vh,650px)}
+.tilegrid.terror-layout{grid-template-columns:repeat(12,32px)!important;grid-auto-rows:32px;gap:4px!important;width:max-content;max-width:100%;justify-content:start;overflow:auto;max-height:min(72vh,650px)}
 .tilegrid.terror-layout .tile{width:32px;height:32px;min-height:32px;padding:0;margin:0;border-radius:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
 .terror-icon{display:flex;align-items:center;justify-content:center;font-size:9px;font-variant-numeric:tabular-nums;color:#9e8fb0;background:linear-gradient(150deg,#292037,#140f1c);border:1px solid #4e3a62;width:32px;height:32px;flex-shrink:0}
 .tile.active .terror-icon{background:#65407f;border-color:#d2a7f4;color:white}
@@ -101,11 +101,17 @@ if(selector==='terror'){
 if(selector==='map')values=Array.from({length:74},(_,i)=>'MAP '+String(i+1).padStart(2,'0'));
 $('selectorTip').textContent=selector==='terror'?`最大${form.round==='Unbound'?1:currentMax()}体選択。現在 ${form.terrors.length}体 / 名前表示（画像未設定）` :selector==='map'?'9×9。最下段の左7マスは空白。マップ名称は仮表示': '項目をクリックして選択';
 for(const [tileIndex,v] of values.entries()){if(selector==='map'&&tileIndex===74)continue;let selected=selector==='terror'?form.terrors.includes(v):selector==='round'?form.round===v:selector==='variant'?form.variant===v:form.map===v;const b=dom('button','tile'+(selected?' active':'')+(selector==='map'?' map':'')+(selector==='terror'&&terrorTab==='Unbound'?' unbound':''),selector==='terror'?'':v);if(selector==='terror'){const ico=dom('span','terror-icon',v.slice(1));ico.setAttribute('aria-hidden','true');b.append(ico);b.title=terrorName(v);b.onmouseenter=()=>{$('terrorNamePreview').textContent=terrorName(v)};b.onfocus=()=>{$('terrorNamePreview').textContent=terrorName(v)};if(terrorTab==='Unbound')b.append(dom('span','terror-name',terrorName(v)));}b.onclick=()=>{if(selector==='round'){form.round=v;form.variant='';form.terrors=[];selector=variants[v]?'variant':null;}else if(selector==='variant'){form.variant=v;form.terrors=form.terrors.slice(0,currentMax());selector=null;}else if(selector==='map'){form.map=v;selector=null;}else if(selector==='terror'){if(form.terrors.includes(v))form.terrors=form.terrors.filter(a=>a!==v);else if(form.terrors.length<(form.round==='Unbound'?1:currentMax()))form.terrors.push(v);else{notify('選択できるテラーは最大 '+currentMax()+' 体');return}}updateForm();if(selector)renderSelector();else $('selector').classList.remove('open')};if(selector==='map'&&tileIndex>=72)b.style.gridColumn=String(tileIndex-72+8);
+if(selector==='terror'&&terrorTab==='Classic'){
+  // Original WinForms: 11 columns x 12 rows, plus C133/C134 in the bottom-left at rows 11/12.
+  // Column 1 stays empty in the first ten rows.
+  b.style.gridColumn=String(tileIndex>=132?1:2+tileIndex%11);
+  b.style.gridRow=String(tileIndex>=132?11+(tileIndex-132):1+Math.floor(tileIndex/11));
+}
 if(selector==='terror'&&terrorTab==='Alternate'){
   const rows=[11,9,7,5,3,1]; let start=0;
   for(let ri=0;ri<rows.length;ri++){if(tileIndex<start+rows[ri]){
     b.style.gridRow=String(ri+1);
-    b.style.gridColumn=String(1+ri+(tileIndex-start));break;
+    b.style.gridColumn=String(2+ri+(tileIndex-start));break;
   }start+=rows[ri];}
 }
 grid.append(b)} }
