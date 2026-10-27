@@ -644,6 +644,12 @@ html,body,button,input,select,textarea,option{
    grid-template-columns:minmax(72px,1fr) 49px 41px minmax(104px,35%)!important;
  }
 }
+
+/* Desktop-compatible Player Values: unknown ? and invalid red borders. */
+.archive-workspace .players-compact.invalid{border-color:#ff566c!important;box-shadow:inset 0 0 0 1px #ff566c66}
+.archive-workspace .players-compact.has-values{border-color:var(--accent)}
+.archive-workspace .players-compact input.count-invalid{outline:1px solid #ff566c!important;background:#3f1b2a!important;color:#ffb9c2}
+.archive-workspace .players-compact input{font-variant-numeric:tabular-nums}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
@@ -654,9 +660,9 @@ html,body,button,input,select,textarea,option{
   <div class="control"><label for="terrorButton">テラー</label><button class="pick" id="terrorButton" aria-label="テラーを選択">テラーを選択</button></div>
  </div>
  <div class="players-control"><label class="input-group-title">人数</label><div class="players-compact">
-   <div class="control"><label for="survived">生存</label><input class="field" id="survived" min="0" placeholder="?" type="number"/></div>
-   <div class="control"><label for="players">参加</label><input class="field" id="players" min="0" placeholder="?" type="number"/></div>
-   <div class="control"><label for="newPlayers">新規生存</label><input class="field" id="newPlayers" min="0" placeholder="?" type="number"/></div>
+   <div class="control"><label for="survived">生存</label><input class="field" id="survived" inputmode="numeric" autocomplete="off" maxlength="3" placeholder="?" type="text"/></div>
+   <div class="control"><label for="players">参加</label><input class="field" id="players" inputmode="numeric" autocomplete="off" maxlength="3" placeholder="?" type="text"/></div>
+   <div class="control"><label for="newPlayers">新規生存</label><input class="field" id="newPlayers" inputmode="numeric" autocomplete="off" maxlength="3" placeholder="?" type="text"/></div>
  </div></div>
  <div class="control"><label for="mapButton">マップ</label><button class="pick" id="mapButton">マップを選択</button></div>
 </div>
@@ -959,7 +965,7 @@ function terrorIcon(id,round=form.round,variant=form.variant,rareChoice=null){
 function canChooseTerror(id){
  if(isUnavailable(id))return false;
  if(form.terrors.includes(id))return true;
- if(form.terrors.length>=currentMax())return false;
+ if(form.terrors.length>=currentMax()&&currentMax()!==1)return false;
  if(form.round==='Midnight'){
    const alts=form.terrors.filter(t=>t.startsWith('A')).length;
    const classics=form.terrors.length-alts;
@@ -1020,7 +1026,8 @@ function updateForm(){
  m.title=mapName(form.map)||'マップを選択';
  m.setAttribute('aria-label',m.title);
  m.classList.toggle('selected',!!form.map);
- for(const id of ['survived','players','newPlayers'])$(id).value=form[id];
+ for(const id of ['survived','players','newPlayers'])$(id).value=form[id]===-1?'?':form[id]??'';
+ playerCountValidation(false);
  $('addEntry').textContent=editing?'変更を保存':'＋ 成果まとめに追加';
  $('cancelEdit').hidden=!editing;
  renderPendingPreview();
@@ -1051,7 +1058,7 @@ function renderPendingPreview(){
  const ids=form.round==='Bloodbath'&&form.variant==='EX'&&chosen[0]?Array(3).fill(chosen[0]):chosen.slice(0,3);
  part('terror-preview','TERROR',chosen.length?chosen.map(id=>terrorDisplayName(id,form.round,form.rareChoices?.[id])).join(' / '):'未選択',
    ids.length?ids.map(id=>terrorIcon(id,form.round,form.variant,form.rareChoices?.[id])):[questionIcon(form.round,form.variant)]);
- const counts=['survived','players','newPlayers'].map(k=>form[k]===''||form[k]===null||form[k]===undefined?'?':form[k]);
+ const counts=['survived','players','newPlayers'].map(k=>form[k]===''||form[k]===null||form[k]===undefined?'-':form[k]===-1||form[k]==='-1'?'?':form[k]);
  const metrics=dom('div','preview-metrics',counts.join(' / '));
  metrics.prepend(dom('small','', '生存 / 参加 / 新規'));root.append(metrics);
  part('map-preview','MAP',mapName(form.map)||'未選択',form.map&&mapBadge(form.map)?[mapBadge(form.map)]:[]);
@@ -1147,7 +1154,8 @@ function renderSelector(){
            notify(form.round==='Midnight'?'MidnightはClassic 2体・Alternate 1体まで選択できます':'選択できるテラーは最大 '+currentMax()+'体');
            return;
          }
-         form.terrors.push(v);
+         if(currentMax()===1)form.terrors=[v];
+         else form.terrors.push(v);
        }
      }
      updateForm();
@@ -1195,12 +1203,86 @@ function fitStandaloneTerrorGrid(){
  popup.style.overflow=mustScroll?'auto':'visible';
 }
 function clearForm(){editing=null;form={round:'',variant:'',terrors:[],rareChoices:{},map:'',survived:'',players:'',newPlayers:''};updateForm()}
-function readCounts(){for(let id of ['survived','players','newPlayers'])form[id]=$(id).value.trim();renderPendingPreview()}
-function commit(){readCounts();if(!form.round){notify('ラウンドを選択してください');return}
- const count=form.terrors.length;
- if(form.round==='Midnight'&&count>0&&(count!==3||form.terrors.filter(x=>x.startsWith('A')).length!==1)){notify('MidnightはClassic 2体＋Alternate 1体を選択してください');return}
- if(form.round==='Bloodbath'&&count>0&&count!==currentMax()){notify('Bloodbathの人数分のテラーを選択してください');return}
- if(disableTerrorSelection()&&count>0){notify('このラウンドではテラーを選択できません');return}const counts=['survived','players','newPlayers'].map(k=>form[k]===''?null:Number(form[k]));if(counts.some(n=>n!==null&&(!Number.isInteger(n)||n<0))){notify('人数には0以上の整数を入力してください');return}const [s,p,n]=counts;if(s!==null&&p!==null&&s>p||n!==null&&s!==null&&n>s||n!==null&&p!==null&&n>p){notify('人数の関係を確認してください（新規生存 ≤ 生存 ≤ 参加）');return}const oldRecord=editing?current().records.find(r=>r.id===editing):null;let rec={...(oldRecord||{}),id:editing||uid(),round:form.round,variant:form.variant,terrors:[...form.terrors],map:form.map,rareChoices:{...form.rareChoices},survived:s,players:p,newPlayers:n};let arr=current().records;if(editing){const at=arr.findIndex(x=>x.id===editing);if(at!==-1)arr[at]=rec;else arr.push(rec)}else arr.push(rec);persist();clearForm();renderRecords();notify('成果を保存しました')}
+
+/* Match desktop PlayerValues: blank=null, ?=-1, known numbers 0..22.
+   Invalid combinations are visibly red, but unknown values impose no constraint. */
+function parsePlayerValue(input){
+ const v=String(input??'').trim();
+ if(v===''||v==='-')return null;
+ if(v==='?'||v==='？')return -1;
+ if(!/^\d{1,2}$/.test(v))return NaN;
+ const number=Number(v);
+ return number<=22?number:NaN;
+}
+function playerCountValidation(showNotice=false){
+ const fields=['survived','players','newPlayers'],values=fields.map(k=>parsePlayerValue(form[k]));
+ const [survived,players,newcomers]=values;
+ const errors=fields.map(()=>false);
+ values.forEach((value,index)=>{if(Number.isNaN(value))errors[index]=true});
+ const known=v=>Number.isInteger(v)&&v>=0;
+ if(known(survived)&&known(players)&&survived>players){errors[0]=true;errors[1]=true}
+ if(known(newcomers)&&known(survived)&&newcomers>survived){errors[0]=true;errors[2]=true}
+ if(known(newcomers)&&known(players)&&newcomers>players){errors[1]=true;errors[2]=true}
+ const valid=!errors.some(Boolean),box=document.querySelector('.players-compact');
+ if(box){
+   box.classList.toggle('invalid',!valid);
+   box.classList.toggle('has-values',valid&&values.some(v=>v!==null));
+ }
+ for(let i=0;i<fields.length;i++){
+   const element=$(fields[i]);
+   element.classList.toggle('count-invalid',errors[i]);
+   element.setAttribute('aria-invalid',errors[i]?'true':'false');
+ }
+ if(!valid&&showNotice)notify('人数を確認してください（0～22、? または空欄）。新規生存 ≤ 生存 ≤ 参加');
+ return valid?values:null;
+}
+function readCounts(){
+ for(const id of ['survived','players','newPlayers'])form[id]=$(id).value.trim();
+ playerCountValidation(false);
+ renderPendingPreview();
+}
+function commit(){
+ readCounts();
+ if(!form.round){notify('ラウンドを選択してください');return}
+ if(!form.map||!mapId(form.map)){notify('マップを選択してください');return}
+ if(form.round!=='Unbound'&&!disableTerrorSelection()&&form.terrors.length===0){
+   notify('テラーを選択してください');return
+ }
+ if(form.round==='Unbound'&&form.terrors.length!==1){
+   notify('Unboundを1つ選択してください');return
+ }
+ if(disableTerrorSelection()&&form.terrors.length>0){
+   notify('このラウンドではテラーを選択できません');return
+ }
+ if(!disableTerrorSelection()&&form.terrors.length!==currentMax()){
+   notify('このラウンドに必要なテラー数は '+currentMax()+' 体です');return
+ }
+ if(form.round==='Midnight'&&
+   (form.terrors.filter(id=>id.startsWith('C')).length!==2||
+    form.terrors.filter(id=>id.startsWith('A')).length!==1)){
+   notify('MidnightはClassic 2体＋Alternate 1体が必要です');return
+ }
+ if(form.round==='Other'&&otherClassic()&&form.terrors.some(id=>!id.startsWith('C'))){
+   notify('Other 3・4ではClassicテラーを選択してください');return
+ }
+ if(form.terrors.some(id=>isUnavailable(id))){
+   notify('このラウンドで出現不可のテラーは記録できません');return
+ }
+ const values=playerCountValidation(true);if(!values)return;
+ const [survived,players,newPlayers]=values;
+ const oldRecord=editing?current().records.find(rec=>rec.id===editing):null;
+ const record={...(oldRecord||{}),id:editing||uid(),round:form.round,
+   variant:form.variant,terrors:[...form.terrors],
+   map:mapId(form.map),rareChoices:{...form.rareChoices},
+   survived,players,newPlayers
+ };
+ const records=current().records;
+ if(editing){
+   const index=records.findIndex(rec=>rec.id===editing);
+   if(index>=0)records[index]=record;else records.push(record);
+ }else records.push(record);
+ persist();clearForm();renderRecords();notify('成果を保存しました');
+}
 function edit(rec){editing=rec.id;form={round:rec.round,variant:rec.variant||'',terrors:Array.isArray(rec.terrors)?[...rec.terrors]:[],map:rec.map||'',rareChoices:{...(rec.rareChoices||{})},survived:rec.survived??'',players:rec.players??'',newPlayers:rec.newPlayers??''};updateForm();window.scrollTo({top:100,behavior:'smooth'})}
 function remove(id){if(!confirm('この成果を削除しますか？'))return;current().records=current().records.filter(r=>r.id!==id);if(editing===id)clearForm();persist();renderRecords()}
 
