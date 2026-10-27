@@ -390,6 +390,54 @@ button:not(:disabled):active{
 @media(max-width:720px){
  .archive-workspace .entry-panel .selector.map-selecting{width:100%;max-width:100%}
 }
+
+/* PixelMplus12, the same font family as the original desktop tool.
+   Hosted from the font author's public repository through jsDelivr. */
+@font-face{
+ font-family:"PixelMplus12";
+ src:url("https://cdn.jsdelivr.net/gh/itouhiro/PixelMplus@master/PixelMplus12-Regular.ttf") format("truetype");
+ font-style:normal;font-weight:400;font-display:swap
+}
+@font-face{
+ font-family:"PixelMplus12";
+ src:url("https://cdn.jsdelivr.net/gh/itouhiro/PixelMplus@master/PixelMplus12-Bold.ttf") format("truetype");
+ font-style:normal;font-weight:700;font-display:swap
+}
+html,body,button,input,select,textarea,option{
+ font-family:"PixelMplus12","Yu Gothic UI",sans-serif!important;
+}
+/* All map badges are native-size canvas elements. Never stretch or square. */
+.map-badge,
+.archive-workspace .entry-grid #mapButton .map-badge,
+.preview-item.map-preview .map-badge,
+.selector.map-selecting .tile.map .map-badge{
+ display:block!important;
+ width:102px!important;min-width:102px!important;max-width:102px!important;
+ height:20px!important;min-height:20px!important;max-height:20px!important;
+ flex:0 0 102px!important;align-self:center!important;
+ aspect-ratio:102 / 20!important;
+ box-sizing:content-box!important;
+ padding:0!important;margin:0!important;border:0!important;
+ object-fit:fill;image-rendering:pixelated;
+ background:transparent!important;
+ border-radius:0!important;
+}
+/* Fixed 106x24 map slots, with the final two in columns eight and nine. */
+.selector.map-selecting #tileGrid.tilegrid.map-layout{
+ grid-template-columns:repeat(9,106px)!important;
+ grid-auto-rows:24px!important;
+ align-items:start;justify-items:start;
+}
+.selector.map-selecting #tileGrid.tilegrid.map-layout .tile.map{
+ display:flex!important;
+ width:106px!important;min-width:106px!important;max-width:106px!important;
+ height:24px!important;min-height:24px!important;max-height:24px!important;
+ aspect-ratio:auto!important;
+ align-self:start;justify-self:start;
+ padding:0!important;margin:0!important;
+ overflow:hidden!important;
+}
+
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
@@ -476,23 +524,39 @@ function mapGraphic(value){
 function mapBadge(value){
  const id=mapId(value),entry=MAP_DATA[id];
  if(!entry)return null;
- const badge=dom('span','map-badge');
- badge.title=entry.name;
- badge.setAttribute('aria-label',entry.name);
+ // The entire badge is one 102x20 canvas: no nested text/image boxes to stretch.
+ const canvas=document.createElement('canvas');
+ canvas.className='map-badge';
+ canvas.width=102;canvas.height=20;
+ canvas.title=entry.name;
+ canvas.setAttribute('role','img');
+ canvas.setAttribute('aria-label',entry.name);
+ const ctx=canvas.getContext('2d');
+ if(!ctx)return canvas;
+ ctx.imageSmoothingEnabled=false;
+ ctx.fillStyle='#000';
+ ctx.fillRect(0,0,102,20);
  const art=mapGraphic(id);
- if(art){
-   const canvas=document.createElement('canvas');canvas.width=102;canvas.height=20;canvas.className='map-badge-image';
-   canvas.getContext('2d').drawImage(art.canvas,0,0);
-   badge.style.setProperty('--map-color',art.color);
-   badge.append(canvas);
- }
- const label=dom('span','map-badge-name',entry.name);
- const probe=document.createElement('canvas').getContext('2d');
+ if(art)ctx.drawImage(art.canvas,0,0);
+ // As in the desktop tool, the name sits on the black left half.
+ ctx.fillStyle='rgba(0,0,0,.9)';
+ ctx.fillRect(1,1,49,18);
+ const border=art?.color||'#eee8f3';
+ ctx.strokeStyle=border;
+ ctx.lineWidth=1;
+ ctx.strokeRect(.5,.5,101,19);
  let px=10;
- for(;px>6;px-=.5){probe.font=px+'px "PixelMplus12","Yu Gothic UI",sans-serif';if(probe.measureText(entry.name).width<=46)break}
- label.style.fontSize=Math.max(px,6)+'px';
- badge.append(label);
- return badge;
+ const family='"PixelMplus12","Yu Gothic UI",sans-serif';
+ for(;px>6;px-=.5){
+   ctx.font=px+'px '+family;
+   if(ctx.measureText(entry.name).width<=46)break;
+ }
+ ctx.font=Math.max(px,6)+'px '+family;
+ ctx.textBaseline='middle';
+ ctx.textAlign='left';
+ ctx.fillStyle=border;
+ ctx.fillText(entry.name,3,10,46);
+ return canvas;
 }
 mapAtlasImage.onload=()=>{
  mapAtlasReady=true;
@@ -503,6 +567,15 @@ mapAtlasImage.onload=()=>{
 };
 mapAtlasImage.onerror=()=>notify('マップ画像を読み込めませんでした');
 mapAtlasImage.src='./assets/map_atlas.png';
+// Repaint text after PixelMplus12 finishes loading; canvas text does not
+// automatically update when a web font replaces a fallback font.
+if(document.fonts&&document.fonts.ready){
+ document.fonts.ready.then(()=>{
+   updateForm();
+   if(selector==='map')renderSelector();
+   renderRecords();
+ }).catch(()=>{});
+}
 
 function roundIcon(round, variant=''){
   const point = variant ? ROUND_SUBICON_COORDS[round+'|'+variant] : ROUND_ATLAS_COORDS[round];
