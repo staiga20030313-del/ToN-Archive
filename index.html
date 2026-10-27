@@ -281,13 +281,59 @@ button:not(:disabled):active{
  .preview-item.terror-preview .preview-value{max-width:150px}
  .preview-item.map-preview{display:none}
 }
+
+/* 1/6 sidebar. Two equal-width icon controls above counts and map. */
+.archive-workspace{grid-template-columns:minmax(0,1fr) minmax(0,5fr)!important;gap:10px}
+.archive-workspace>.entry-panel{padding:10px!important}
+.archive-workspace .entry-grid{gap:12px!important}
+.archive-workspace .entry-icon-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;width:100%;min-width:0}
+.archive-workspace .entry-icon-row>.control{display:flex;flex-direction:column;gap:5px;min-width:0;width:100%!important;max-width:none!important;flex:1 1 auto!important}
+.archive-workspace .entry-icon-row>.control>label{font-size:11px;line-height:17px;color:#bfb0cf;font-weight:700;white-space:nowrap}
+.archive-workspace .entry-icon-row .pick{width:100%!important;min-width:0!important;height:52px!important;min-height:52px!important;max-width:none!important;box-sizing:border-box}
+.archive-workspace .entry-icon-row #roundButton,
+.archive-workspace .entry-icon-row #terrorButton{height:52px!important;min-height:52px!important;width:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:3px 1px!important;gap:2px!important;overflow:hidden}
+.archive-workspace .entry-icon-row #terrorButton .terror-canvas,
+.archive-workspace .entry-icon-row #terrorButton .question-icon{width:24px;height:24px;flex:0 0 24px}
+.archive-workspace .entry-icon-row #roundButton .round-sprite{flex:0 0 32px}
+.archive-workspace .players-compact{padding:5px 3px!important;gap:2px!important}
+.archive-workspace .players-compact .control{min-width:0}
+.archive-workspace .players-compact label{font-size:9px;letter-spacing:0;white-space:nowrap}
+.archive-workspace .entry-grid #mapButton{height:52px!important;min-height:52px!important}
+/* Compact left-aligned preview: only sprites for round and terror. */
+.preview-panel{padding:8px 11px!important;min-height:87px!important}
+.preview-topline{margin-bottom:4px!important;gap:8px}
+.preview-heading{font-size:12px}
+.preview-content{justify-content:flex-start!important;gap:12px!important;min-height:42px}
+.preview-display{justify-content:flex-start!important;gap:11px!important;flex:1 1 auto!important;min-width:0}
+.preview-item.round-preview,
+.preview-item.terror-preview{flex:0 0 auto!important;min-width:0}
+.preview-item.round-preview .preview-sprites,
+.preview-item.terror-preview .preview-sprites{gap:3px}
+.preview-item.map-preview{flex:0 1 145px}
+.preview-metrics{flex:0 0 auto}
+.preview-actions{margin-left:auto;flex:0 0 150px}
+.preview-actions #addEntry{height:38px!important}
+@media(max-width:1060px) and (min-width:721px){
+  .archive-workspace{grid-template-columns:minmax(172px,1fr) minmax(0,4.5fr)!important}
+  .archive-workspace .entry-icon-row .pick{height:46px!important;min-height:46px!important}
+  .archive-workspace .entry-icon-row #roundButton,
+  .archive-workspace .entry-icon-row #terrorButton{height:46px!important;min-height:46px!important}
+  .archive-workspace .players-compact label{font-size:8px}
+}
+@media(max-width:720px){
+  .archive-workspace{display:flex!important;flex-direction:column}
+  .archive-workspace>.entry-panel,.results-workspace{width:100%}
+  .archive-workspace .entry-icon-row{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
- <div class="control"><label for="roundButton">ラウンド</label><button class="pick" id="roundButton" aria-label="ラウンドを選択">?</button></div>
- <div class="control"><label for="terrorButton">テラー</label><button class="pick" id="terrorButton" aria-label="テラーを選択">テラーを選択</button></div>
+ <div class="entry-icon-row">
+  <div class="control"><label for="roundButton">ラウンド</label><button class="pick" id="roundButton" aria-label="ラウンドを選択">?</button></div>
+  <div class="control"><label for="terrorButton">テラー</label><button class="pick" id="terrorButton" aria-label="テラーを選択">テラーを選択</button></div>
+ </div>
  <div class="players-control"><label class="input-group-title">人数</label><div class="players-compact">
    <div class="control"><label for="survived">生存</label><input class="field" id="survived" min="0" placeholder="?" type="number"/></div>
    <div class="control"><label for="players">参加</label><input class="field" id="players" min="0" placeholder="?" type="number"/></div>
@@ -515,8 +561,6 @@ function updateForm(){
    t.replaceChildren(...slots.map(id=>id?terrorIcon(id,form.round,form.variant,form.rareChoices?.[id]):questionIcon(form.round,form.variant)));
    t.classList.add('has-terror-sprite');
  }else{t.replaceChildren(questionIcon(form.round,form.variant));t.classList.add('has-terror-sprite')}
- const width=slots.length>=3?134:slots.length===2?112:104;
- t.parentElement.style.width=width+'px';t.parentElement.style.flex='0 0 '+width+'px';
  t.title=chosen.map(id=>terrorDisplayName(id,form.round,form.rareChoices?.[id])).join(' / ')||'テラーを選択';
  t.setAttribute('aria-label',t.title);
  t.disabled=disableTerrorSelection();
@@ -536,11 +580,17 @@ function renderPendingPreview(){
  $('previewHint').textContent=form.round?'内容を確認して追加':'左の項目から入力';
  const part=(kind,label,value,nodes=[])=>{
    const item=dom('div','preview-item '+kind);
+   const iconOnly=kind==='round-preview'||kind==='terror-preview';
+   item.title=label+'：'+value;
+   item.setAttribute('aria-label',item.title);
    if(nodes.length){const sprites=dom('div','preview-sprites');sprites.append(...nodes);item.append(sprites)}
-   const text=dom('div','preview-item-text');
-   text.append(dom('span','preview-label',label));
-   const v=dom('span','preview-value',value);v.title=value;
-   text.append(v);item.append(text);root.append(item);
+   if(!iconOnly){
+     const text=dom('div','preview-item-text');
+     text.append(dom('span','preview-label',label));
+     const v=dom('span','preview-value',value);v.title=value;
+     text.append(v);item.append(text);
+   }
+   root.append(item);
  };
  part('round-preview','ROUND',[form.round,form.variant].filter(Boolean).join(' / ')||'未選択',[roundIcon(form.round,form.variant)||questionIcon()]);
  const chosen=form.terrors||[];
