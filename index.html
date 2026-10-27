@@ -1418,7 +1418,14 @@ function summaryInit(){
  if(!menu){menu=dom('div','summary-context-menu');menu.id='summaryContextMenu';menu.hidden=true;document.body.append(menu)}
  document.addEventListener('pointerdown',e=>{if(!menu.contains(e.target))menu.hidden=true});
  document.addEventListener('keydown',e=>{if(e.key==='Escape')menu.hidden=true});
- state.mode=state.mode==='text'?'text':'icon';renderRecords();
+ if(!state.summaryViewVersion){
+   // Older web builds stored 'text' even while showing icons.
+   // Correct that legacy mismatch once, without changing records.
+   state.mode='icon';
+   state.summaryViewVersion=2;
+   persist();
+ }else state.mode=state.mode==='text'?'text':'icon';
+ renderRecords();
 }
 async function summaryExportPng(){
  const session=current(),iconMode=state.mode!=='text';
