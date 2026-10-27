@@ -37,8 +37,10 @@ function normalized(s){return String(s||'').replace(ALT_QUALIFIER,'').normalize(
 function mapLookup(name,maps){
  const value=String(name||'').trim().toLowerCase();
  if(!value)return '';
- const matches=Object.entries(maps||{}).filter(([,v])=>String(v.name||'').trim().toLowerCase()===value);
- return matches.length===1?matches[0][0]:'';
+ // Match native CatalogRepository: first matching map in catalog order.
+ // Names are not unique (e.g. M13 and M23 are both "Neon Towers").
+ const match=Object.entries(maps||{}).find(([,v])=>String(v.name||'').trim().toLowerCase()===value);
+ return match?match[0]:'';
 }
 function parseTimestamp(line){
  const m=stamp.exec(line);if(!m)return null;
@@ -51,6 +53,8 @@ function parseTimestamp(line){
 function analyze(contents,filename,maps){
  if(typeof contents!=='string')throw Error('ログの内容が不正です');
  const source=String(filename||'output_log.txt').replace(/[\\/]/g,'_');
+ // Native VrcLogDetector uses StringComparer.OrdinalIgnoreCase for names.
+ const playerKey=name=>String(name||'').trim().toLowerCase();
  const present=new Set(),rounds=[];
  let active=null,pendingStart=false,index=0,lines=0,joins=0,deaths=0;
  function begin(time){
@@ -108,15 +112,15 @@ function analyze(contents,filename,maps){
    if(/\[Behaviour\] OnPlayerLeftRoom/i.test(line)&&/local player|LocalPlayer/i.test(line))present.clear();
    const join=joined.exec(line);
    if(join){
-     const name=join[1].trim();present.add(name);joins++;
-     if(active&&!active.ended){active.sawRoster=true;active.peak=Math.max(active.peak,present.size);active.observed.add(name)}
+     const name=join[1].trim();present.add(playerKey(name));joins++;
+     if(active&&!active.ended){active.sawRoster=true;active.peak=Math.max(active.peak,present.size);active.observed.add(playerKey(name))}
    }
    const leave=left.exec(line);
    if(leave){
      if(active&&!active.ended){active.sawRoster=true;active.peak=Math.max(active.peak,present.size)}
-     present.delete(leave[1].trim());
+     present.delete(playerKey(leave[1]));
    }
-   if(line.includes('Everything recieved, looks good to meee~!')){
+   if(/Everything recieved, looks good to meee~!/i.test(line)){
      finish(active);active=begin(time);pendingStart=true;continue;
    }
    const map=roundMap.exec(line);
@@ -140,7 +144,7 @@ function analyze(contents,filename,maps){
    }
    if(/Killers is unknown/i.test(line))active.spawnMs??=time.ms;
    const d=death.exec(line);
-   if(d&&!active.ended){active.deathNames.add(d[1].trim());active.observed.add(d[1].trim());deaths++}
+   if(d&&!active.ended){active.deathNames.add(playerKey(d[1]));active.observed.add(playerKey(d[1]));deaths++}
    if(!active.ended&&/You died\.|You Died iN the Round/i.test(line))active.localDied=true;
    if(/respawned|Respawned\? Coward/i.test(line))active.respawn=true;
    if(/WE WON/i.test(line))active.explicitWon=true;
