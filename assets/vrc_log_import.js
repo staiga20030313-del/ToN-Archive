@@ -66,23 +66,31 @@ function normalizeMappings(data){
  return {entries,byScope};
 }
 let activeMapping=null,mappingWarning='',mappingSource='';
-/* Published, author-reviewed mapping wins over per-browser imports.
-   When no reviewed mappings are bundled, retain existing local imports. */
+/* Original PNG atlas-order IDs are bundled with the site. Existing manual
+   assignments, including special 8 Pages IDs, remain authoritative. */
+function combineMappings(manualRows){
+ const shipped=window.TON_BUILTIN_TERROR_MAPPING?.Entries||[];
+ if(!shipped.length&&!manualRows.length)return null;
+ const manuals=manualRows.length?normalizeMappings({Entries:manualRows}).entries:[];
+ const editedIds=new Set(manuals.map(row=>row.CatalogId));
+ const scopeOf=catalog=>catalog.startsWith('ALT')?'ALT':catalog.startsWith('8P')?'8P':'T';
+ const usedNumbers=new Set(manuals.map(row=>scopeOf(row.CatalogId)+':'+row.LogId));
+ const combined=[...manuals,...shipped.filter(row=>
+   !editedIds.has(row.CatalogId)&&
+   !usedNumbers.has(scopeOf(row.CatalogId)+':'+String(Number(row.LogId))))];
+ return normalizeMappings({Entries:combined});
+}
 try{
- const embedded=window.TON_BUILTIN_TERROR_MAPPING;
- if(embedded?.Entries?.length){
-   activeMapping=normalizeMappings(embedded);
-   mappingSource='builtin';
- }
-}catch(e){mappingWarning='組込対応表を読み込めません: '+(e?.message||String(e))}
-if(!activeMapping){
+ const saved=localStorage.getItem(MAPPING_STORAGE);
+ const manual=saved?normalizeMappings(JSON.parse(saved)).entries:[];
+ activeMapping=combineMappings(manual);
+ mappingSource=manual.length?'local':activeMapping?'builtin':'';
+}catch(e){
+ mappingWarning='保存済みID対応表を読み込めません: '+(e?.message||String(e));
  try{
-   const data=localStorage.getItem(MAPPING_STORAGE);
-   if(data){
-     activeMapping=normalizeMappings(JSON.parse(data));
-     mappingSource='local';
-   }
- }catch(e){mappingWarning=e?.message||String(e)}
+   activeMapping=combineMappings([]);
+   if(activeMapping)mappingSource='builtin';
+ }catch(error){mappingWarning+=' / 組込対応表: '+(error?.message||String(error))}
 }
 function mappingInfo(){
  return {count:activeMapping?.entries.length||0,error:mappingWarning,source:mappingSource};
@@ -92,9 +100,10 @@ function mappingEntries(){
 }
 function importMappings(data){
  const validated=normalizeMappings(data);
- // Never erase existing IDs on a rejected import or storage failure.
+ const combined=combineMappings(validated.entries);
+ // Validate the merged result before changing stored mappings.
  localStorage.setItem(MAPPING_STORAGE,JSON.stringify({Entries:validated.entries}));
- activeMapping=validated;mappingWarning='';mappingSource='local';
+ activeMapping=combined;mappingWarning='';mappingSource='local';
  return mappingInfo();
 }
 function lookupTerror(logId,round,variant,position,alternate){
