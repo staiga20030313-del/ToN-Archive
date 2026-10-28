@@ -240,7 +240,7 @@ function openLogFilePicker(){
   void request.then(async handles=>{
     const handle=handles?.[0];if(!handle)return;
     const file=await handle.getFile();
-    if(!/^output_log_.*\\.txt$/i.test(file.name))throw Error('output_log_*.txt を選択してください');
+    if(!/^output_log_.*\.txt$/i.test(file.name))throw Error('output_log_*.txt を選択してください');
     if(file.size>50*1024*1024)throw Error('ログが50MBを超えています');
     const data=window.TON_VRC_LOG.analyze(await file.text(),file.name,MAP_DATA);
     lastPickedLog=handle;
