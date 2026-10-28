@@ -1149,6 +1149,30 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 .vrc-live-panel .vrc-live-count-ratio,.vrc-live-panel .vrc-live-duration{font-size:10px!important;line-height:20px!important;font-weight:400!important;font-variant-numeric:tabular-nums!important;color:#d6d6d6!important}
 .vrc-live-panel .vrc-live-count-ratio{text-align:right!important}
 .vrc-live-panel .vrc-live-duration{text-align:right!important;min-width:29px!important}
+
+/* Summary: center any number of terror sprites; keep title backing identical to its panel. */
+.results-workspace .summary-record .summary-terror-icons{justify-content:center!important;align-items:center!important;align-content:center!important;text-align:center!important}
+.results-workspace .summary-record.unbound-row .summary-terror-icons{align-items:center!important}
+.results-workspace .summary-group-head .summary-group-label,
+.results-workspace .summary-round-grip{background:var(--summary-background,#080808)!important}
+.results-workspace .records-panel{--summary-background:#080808!important}
+.results-workspace .summary-group{background:var(--summary-background,#080808)!important}
+/* Enlarged records must fit their own column, not a fixed 194+94+74px grid. */
+.results-workspace .summary-record.enlarged:not(.text-record){
+ grid-template-columns:minmax(0,1fr) minmax(46px,24%) minmax(38px,19%)!important;
+ column-gap:3px!important;
+ grid-template-rows:auto auto!important;
+ width:calc(100% - 39px)!important;
+ min-width:0!important;
+}
+.results-workspace .summary-record.enlarged:not(.text-record) .summary-terror-icons{grid-column:1!important;grid-row:1!important;min-width:0!important;padding:0!important}
+.results-workspace .summary-record.enlarged:not(.text-record) .summary-counts{grid-column:2!important;grid-row:1!important;min-width:0!important;font-size:clamp(15px,1.5vw,26px)!important;white-space:nowrap!important}
+.results-workspace .summary-record.enlarged:not(.text-record) .summary-new{grid-column:3!important;grid-row:1!important;min-width:0!important;font-size:clamp(11px,1vw,17px)!important;white-space:nowrap!important}
+.results-workspace .summary-record.enlarged:not(.text-record) .summary-map{grid-column:1/-1!important;grid-row:2!important;min-width:0!important;justify-content:flex-end!important;overflow:hidden!important}
+.results-workspace .summary-record.enlarged:not(.text-record) .summary-map .map-badge{
+ width:min(180px,100%)!important;max-width:100%!important;min-width:0!important;
+ height:auto!important;max-height:none!important;aspect-ratio:5/1!important;flex:0 1 180px!important
+}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.48">v1.0.48</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
