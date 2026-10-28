@@ -1080,6 +1080,42 @@ body.terror-id-editor-open{overflow:hidden}
 
 /* Keep summary header minimal; retained hidden controls preserve existing JS bindings. */
 .records-panel .headline .list-tools{display:none!important}
+
+/* ToN-inspired monochrome visual system. Preserve all atlas sprite colors. */
+:root{color-scheme:dark;--bg:#000;--panel:#080808;--panel2:#101010;--edge:#454545;--violet:#d4d4d4;--text:#e7e7e7;--muted:#929292;--pink:#c6c6c6;--green:#d8d8d8;--accent:#c8c8c8}
+html,body{background:#000!important;color:var(--text)!important;font-family:'PixelMplus12','PixelMplus', 'Yu Gothic UI',monospace!important}
+body{background-image:none!important}
+.panel,.archive-header,.entry-panel,.records-panel,.preview-panel,.vrc-live-panel,.selector,.vrc-round-filter-popover,.vrc-log-dialog,.notice,.status{
+ background:#080808!important;background-image:none!important;border:1px solid #484848!important;border-radius:2px!important;box-shadow:none!important;color:var(--text)!important
+}
+.panel{border-width:1px!important}
+button,.field,input,select,textarea,.chip,.pick,.tile,.record,.pill,.map-badge{
+ border-radius:2px!important;box-shadow:none!important
+}
+button,.chip,.pick,.tile{background:#111!important;border:1px solid #4a4a4a!important;color:#e0e0e0!important;transition:background .12s,border-color .12s!important}
+button:hover:not(:disabled),.chip:hover,.tile:hover{background:#202020!important;border-color:#bcbcbc!important}
+button.primary,.chip.on,.tile.active,.pick.selected,.vrc-log-view-controls button.on,.vrc-round-filter-tile.on{
+ background:#252525!important;border-color:#b0b0b0!important;color:#fff!important
+}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:1px solid #eee!important;outline-offset:2px!important}
+.field,input,select,textarea{background:#050505!important;border-color:#454545!important;color:#e7e7e7!important}
+.field::placeholder,input::placeholder{color:#777!important}
+.record,.group-heading,.empty,.notice,.status{background:#0d0d0d!important;border-color:#404040!important}
+.record:hover{border-color:#a3a3a3!important}
+.group-heading{border-left:2px solid #bcbcbc!important;color:#e3e3e3!important}
+.headline h2,.preview-heading,.vrc-live-head strong,.app-name,.entry-grid label,.preview-label,.preview-value,.tiny,.sub,.preview-hint,.control label,.session-row label{
+ font-family:inherit!important;letter-spacing:.015em!important
+}
+.headline h2,.preview-heading,.vrc-live-head strong,.app-name{color:#f1f1f1!important}
+.preview-label,.tiny,.sub,.preview-hint,.control label,.session-row label{color:#a8a8a8!important}
+.record .round,.record .detail,.record .numbers,.preview-metrics,.preview-value,.pill,.tag{color:#d8d8d8!important}
+.separator,.vrc-live-head{border-color:#444!important}
+.vrc-round-filter-popover{background:#080808!important}
+.vrc-round-filter-tile{background:transparent!important;border-color:transparent!important}
+.vrc-round-filter-tile.on{background:#252525!important;border-color:#999!important}
+::-webkit-scrollbar{width:7px;height:7px}
+::-webkit-scrollbar-track{background:#080808}
+::-webkit-scrollbar-thumb{background:#505050;border:1px solid #101010}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.43">v1.0.43</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
