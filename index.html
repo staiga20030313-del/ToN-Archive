@@ -1035,8 +1035,25 @@ body.terror-id-editor-open{overflow:hidden}
 .vrc-round-filter-tile.on{opacity:1;border-color:#9871b3!important;background:#35243f!important}
 .vrc-round-filter-tile:hover{opacity:1!important;filter:brightness(1.15)!important}
 .vrc-round-filter-tile:focus-visible{outline:2px solid #d1a6f1;outline-offset:1px}
+
+/* Compact the VRC header/filename/sort controls without hiding filenames. */
+.vrc-live-panel .vrc-live-head{padding-bottom:4px!important;margin-bottom:3px!important}
+.vrc-live-panel .vrc-live-details{
+ min-height:0!important;max-height:42px!important;
+ line-height:1.35!important;margin:0!important;padding:0!important;
+}
+.vrc-live-panel .vrc-log-view-controls{margin:2px 0 3px!important;gap:5px}
+.vrc-live-panel .vrc-log-view-controls button{padding:5px 3px!important}
+.vrc-live-panel .vrc-live-section{margin:6px 0 5px!important}
+/* Show the estimated round duration immediately to the right of survivor counts. */
+.vrc-live-panel .vrc-live-people-compact{gap:6px!important}
+.vrc-live-panel .vrc-live-duration{
+ display:inline-block;flex:0 0 auto;
+ white-space:nowrap;font-size:10px;line-height:20px;
+ font-variant-numeric:tabular-nums;color:#bca9cb;
+}
 </style></head><body><main class="shell">
-<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.37">v1.0.37</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
+<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.38">v1.0.38</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
