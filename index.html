@@ -861,8 +861,84 @@ html,body,button,input,select,textarea,option{
   height:auto!important;
   min-height:0!important;
 }
+
+/* Compact VRC detector rows: icons on line one; map + counts on line two. */
+@media(min-width:1121px){
+ .archive-workspace{
+  grid-template-columns:minmax(0,1fr) minmax(0,4fr) minmax(0,1fr)!important;
+ }
+}
+.vrc-live-panel .vrc-live-rounds > .vrc-live-round{
+ flex:0 0 auto!important;
+ flex-shrink:0!important;
+ min-height:72px!important;
+ height:auto!important;
+ max-height:none!important;
+ padding:6px 5px!important;
+}
+.vrc-live-panel .vrc-live-round-content{
+ display:flex!important;
+ flex-direction:column!important;
+ gap:6px!important;
+ min-width:0!important;
+ width:100%!important;
+}
+.vrc-live-panel .vrc-live-card-top{
+ display:flex!important;
+ align-items:center!important;
+ justify-content:flex-start!important;
+ gap:12px!important;
+ min-height:32px!important;
+ height:32px!important;
+ width:100%!important;
+ overflow:hidden!important;
+}
+.vrc-live-panel .vrc-live-terror-icons{
+ flex:0 0 auto!important;
+ min-width:0!important;
+ max-width:calc(100% - 44px)!important;
+ overflow:hidden!important;
+}
+.vrc-live-panel .vrc-live-map-row{
+ display:flex!important;
+ align-items:center!important;
+ flex-wrap:nowrap!important;
+ gap:6px!important;
+ min-height:20px!important;
+ height:20px!important;
+ width:100%!important;
+ overflow:hidden!important;
+}
+.vrc-live-panel .vrc-live-map-row .map-badge{
+ flex:0 0 102px!important;
+ width:102px!important;
+ height:20px!important;
+}
+.vrc-live-panel .vrc-live-people-compact{
+ display:flex;
+ flex:1 1 auto;
+ min-width:0;
+ align-items:center;
+ justify-content:flex-start;
+ gap:8px;
+ white-space:nowrap;
+ overflow:hidden;
+ font-variant-numeric:tabular-nums;
+ font-size:11px;
+ line-height:20px;
+ color:#e8dcf2;
+}
+.vrc-live-panel .vrc-live-count-ratio,
+.vrc-live-panel .vrc-live-count-new{
+ display:inline-block;
+ flex:0 0 auto;
+ white-space:nowrap;
+ font-weight:700;
+ font-size:11px;
+}
+.vrc-live-panel .vrc-live-count-new{color:#a7e3c5}
 </style></head><body><main class="shell">
-<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.17">v1.0.17</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
+<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.18">v1.0.18</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
