@@ -287,6 +287,8 @@ button:not(:disabled):active{
 .archive-workspace>.entry-panel{padding:10px!important}
 .archive-workspace .entry-grid{gap:12px!important}
 .archive-workspace .entry-icon-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;width:100%;min-width:0}
+/* Give 2-3 terror icons their native width without changing the 1/6 sidebar. */
+.archive-workspace .entry-icon-row:has(#terrorButton > :nth-child(2)){grid-template-columns:44px minmax(0,1fr);gap:4px}
 .archive-workspace .entry-icon-row>.control{display:flex;flex-direction:column;gap:5px;min-width:0;width:100%!important;max-width:none!important;flex:1 1 auto!important}
 .archive-workspace .entry-icon-row>.control>label{font-size:11px;line-height:17px;color:#bfb0cf;font-weight:700;white-space:nowrap}
 .archive-workspace .entry-icon-row .pick{width:100%!important;min-width:0!important;height:52px!important;min-height:52px!important;max-width:none!important;box-sizing:border-box}
@@ -298,7 +300,7 @@ button:not(:disabled):active{
  display:inline-flex!important;align-self:center!important;align-items:center!important;justify-content:center!important;
  width:max-content!important;min-width:0!important;max-width:100%!important;
  height:auto!important;min-height:0!important;max-height:none!important;
- margin:calc((var(--terror-control-height) - var(--terror-icon-size))/2) 0 0!important;padding:0!important;gap:2px!important;
+ margin:calc((var(--terror-control-height) - var(--terror-icon-size))/2) 0 0!important;padding:0!important;gap:4px!important;
  background:transparent!important;border:0!important;border-radius:0!important;
  box-shadow:none!important;overflow:visible!important;text-overflow:clip!important
 }
@@ -309,9 +311,9 @@ button:not(:disabled):active{
 .archive-workspace .entry-icon-row #terrorButton .question-icon{width:32px;height:32px;flex:0 0 32px}
 .archive-workspace .entry-icon-row #terrorButton:has(>.unbound-canvas){--terror-icon-size:38px}
 .archive-workspace .entry-icon-row #terrorButton .unbound-canvas{width:38px;height:38px;flex:0 0 38px}
-.archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)){--terror-icon-size:24px}
+.archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)){--terror-icon-size:32px}
 .archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)) .terror-canvas,
-.archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)) .question-icon{width:24px;height:24px;flex:0 0 24px}
+.archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)) .question-icon{width:32px;height:32px;flex:0 0 32px}
 .archive-workspace .entry-icon-row #roundButton .round-sprite{flex:0 0 32px}
 .archive-workspace .players-compact{padding:5px 3px!important;gap:2px!important}
 .archive-workspace .players-compact .control{min-width:0}
@@ -336,9 +338,9 @@ button:not(:disabled):active{
   .archive-workspace .entry-icon-row .pick{height:46px!important;min-height:46px!important}
   .archive-workspace .entry-icon-row #roundButton{height:46px!important;min-height:46px!important}
   .archive-workspace .entry-icon-row #terrorButton{--terror-control-height:46px}
-  .archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)){--terror-icon-size:19px}
+  .archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)){--terror-icon-size:32px}
   .archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)) .terror-canvas,
-  .archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)) .question-icon{width:19px;height:19px;flex:0 0 19px}
+  .archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)) .question-icon{width:32px;height:32px;flex:0 0 32px}
   .archive-workspace .players-compact label{font-size:8px}
 }
 @media(max-width:720px){
@@ -971,7 +973,7 @@ function cachedTerrorCanvas(id,round=form.round,variant=form.variant,rareChoice=
  recolorCache.set(key,canvas);
  return canvas;
 }
-function questionIcon(round='',variant=''){
+function questionIcon(round='',variant='',untinted=false){
  if(!round||!terrorSheetReady){
    const node=dom('span','round-sprite question-icon');
    node.style.backgroundPosition='0px 0px';
@@ -979,10 +981,12 @@ function questionIcon(round='',variant=''){
    return node;
  }
  const c=document.createElement('canvas');c.width=c.height=32;
- c.className='terror-canvas question-icon';
+ c.className='terror-canvas question-icon'+(untinted?' alternate-question-icon':'');
  const ctx=c.getContext('2d',{willReadFrequently:true});
  ctx.imageSmoothingEnabled=false;
  ctx.drawImage(terrorSheet,0,0,32,32,0,0,32,32);
+ // Keep the original white atlas question mark for Midnight's Alternate slot.
+ if(untinted)return c;
  const rule=colorRule(round,variant);
  let primary=rgb(rule?.C),secondary=rgb(rule?.F);
  if(!primary){
@@ -1079,8 +1083,9 @@ function updateForm(){
    (form.variant==='EX'?Array(3).fill(chosen[0]||null):
      [...chosen.slice(0,max),...Array(Math.max(0,max-chosen.length)).fill(null)]):
    chosen;
- t.replaceChildren(...(slots.length?slots:[null]).map(id=>
-   id?terrorIcon(id,form.round,form.variant,form.rareChoices?.[id]):questionIcon(form.round,form.variant)
+ t.replaceChildren(...(slots.length?slots:[null]).map((id,index)=>
+   id?terrorIcon(id,form.round,form.variant,form.rareChoices?.[id]):
+      questionIcon(form.round,form.variant,form.round==='Midnight'&&index===2)
  ));
  t.classList.add('has-terror-sprite');
  t.title=chosen.map(id=>terrorDisplayName(id,form.round,form.rareChoices?.[id])).join(' / ')||'テラーを選択';
