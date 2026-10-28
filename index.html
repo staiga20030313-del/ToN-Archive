@@ -291,12 +291,14 @@ button:not(:disabled):active{
 .archive-workspace .entry-icon-row>.control>label{font-size:11px;line-height:17px;color:#bfb0cf;font-weight:700;white-space:nowrap}
 .archive-workspace .entry-icon-row .pick{width:100%!important;min-width:0!important;height:52px!important;min-height:52px!important;max-width:none!important;box-sizing:border-box}
 .archive-workspace .entry-icon-row #roundButton{height:52px!important;min-height:52px!important;width:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:3px 1px!important;gap:2px!important;overflow:hidden}
-/* The terror chooser is the sprite itself, not a full-width rounded button. */
+/* The terror chooser is the sprite itself, not a full-width rounded button.
+   Center its actual icon in the same 52px row as the round sprite. */
 .archive-workspace .entry-icon-row #terrorButton{
+ --terror-icon-size:32px;--terror-control-height:52px;
  display:inline-flex!important;align-self:center!important;align-items:center!important;justify-content:center!important;
  width:max-content!important;min-width:0!important;max-width:100%!important;
  height:auto!important;min-height:0!important;max-height:none!important;
- margin:0!important;padding:0!important;gap:2px!important;
+ margin:calc((var(--terror-control-height) - var(--terror-icon-size))/2) 0 0!important;padding:0!important;gap:2px!important;
  background:transparent!important;border:0!important;border-radius:0!important;
  box-shadow:none!important;overflow:visible!important;text-overflow:clip!important
 }
@@ -305,7 +307,9 @@ button:not(:disabled):active{
 }
 .archive-workspace .entry-icon-row #terrorButton .terror-canvas,
 .archive-workspace .entry-icon-row #terrorButton .question-icon{width:32px;height:32px;flex:0 0 32px}
+.archive-workspace .entry-icon-row #terrorButton:has(>.unbound-canvas){--terror-icon-size:38px}
 .archive-workspace .entry-icon-row #terrorButton .unbound-canvas{width:38px;height:38px;flex:0 0 38px}
+.archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)){--terror-icon-size:24px}
 .archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)) .terror-canvas,
 .archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)) .question-icon{width:24px;height:24px;flex:0 0 24px}
 .archive-workspace .entry-icon-row #roundButton .round-sprite{flex:0 0 32px}
@@ -331,6 +335,8 @@ button:not(:disabled):active{
   .archive-workspace{grid-template-columns:minmax(172px,1fr) minmax(0,4.5fr)!important}
   .archive-workspace .entry-icon-row .pick{height:46px!important;min-height:46px!important}
   .archive-workspace .entry-icon-row #roundButton{height:46px!important;min-height:46px!important}
+  .archive-workspace .entry-icon-row #terrorButton{--terror-control-height:46px}
+  .archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)){--terror-icon-size:19px}
   .archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)) .terror-canvas,
   .archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)) .question-icon{width:19px;height:19px;flex:0 0 19px}
   .archive-workspace .players-compact label{font-size:8px}
