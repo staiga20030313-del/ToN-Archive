@@ -34,6 +34,7 @@ const variantList=typeof variants!=='undefined'?variants:{};
 function roundKeys(round){return [round,...(variantList[round]||[]).map(v=>round+'/'+v)]}
 function roundAllowed(r){
   if(!r.round)return true;
+  if(r.round==='Sabotage'&&!r.variant)return ['Sabotage 1','Sabotage 2'].some(v=>!disabledRounds.has('Sabotage/'+v));
   return !disabledRounds.has(r.round+(r.variant?'/'+r.variant:''));
 }
 function survivalScore(r){
@@ -153,6 +154,15 @@ function renderScan(){
     node.type='button';
     node.className='vrc-live-round'+(duplicate?' imported':'')+(allowed?'':' is-disabled')+(selected?' is-selected':'');
     node.disabled=!allowed;
+    node.draggable=allowed;
+    node.addEventListener('dragstart',event=>{
+      if(!allowed){event.preventDefault();return}
+      event.dataTransfer.effectAllowed='copy';
+      event.dataTransfer.setData('application/x-ton-vrc-round',String(r.sourceLogKey||''));
+      event.dataTransfer.setData('text/plain',String(r.sourceLogKey||''));
+      node.classList.add('is-dragging');
+    });
+    node.addEventListener('dragend',()=>node.classList.remove('is-dragging'));
     node.dataset.sourceKey=String(r.sourceLogKey||'');
     node.setAttribute('aria-pressed',String(selected));
     node.setAttribute('aria-label',
@@ -473,6 +483,28 @@ for(const atlas of [
 }
 if(document.fonts?.ready){
   document.fonts.ready.then(()=>{if(vrcLogScan?.rounds?.length)renderScan()}).catch(()=>{});
+}
+// Drop a single log round into the summary without affecting the existing reorder drag.
+const summaryTarget=document.querySelector('.results-workspace .records-panel');
+if(summaryTarget){
+  summaryTarget.addEventListener('dragover',event=>{
+    if(!event.dataTransfer.types.includes('application/x-ton-vrc-round'))return;
+    event.preventDefault();event.dataTransfer.dropEffect='copy';
+    summaryTarget.classList.add('vrc-summary-drag-target');
+  });
+  summaryTarget.addEventListener('dragleave',event=>{
+    if(!summaryTarget.contains(event.relatedTarget))summaryTarget.classList.remove('vrc-summary-drag-target');
+  });
+  summaryTarget.addEventListener('drop',event=>{
+    const key=event.dataTransfer.getData('application/x-ton-vrc-round');
+    if(!key)return;
+    event.preventDefault();event.stopPropagation();
+    summaryTarget.classList.remove('vrc-summary-drag-target');
+    const round=(vrcLogScan?.rounds||[]).find(r=>r.sourceLogKey===key);
+    if(!round||!roundAllowed(round)||!importable(round,importedKeys()))return;
+    window.TON_VRC_IMPORT?.importSelected(new Set([key]));
+    selectedKeys.delete(key);renderScan();
+  },true);
 }
 renderScan();
 if(typeof window.showDirectoryPicker==='function'){
