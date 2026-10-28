@@ -1364,46 +1364,18 @@ function cachedTerrorCanvas(id,round=form.round,variant=form.variant,rareChoice=
  return canvas;
 }
 function questionIcon(round='',variant='',untinted=false){
- if(!round||!terrorSheetReady){
+ // Keep the source atlas colors for every unselected terror slot.
+ if(!terrorSheetReady){
    const node=dom('span','round-sprite question-icon');
    node.style.backgroundPosition='0px 0px';
    node.setAttribute('aria-hidden','true');
    return node;
  }
  const c=document.createElement('canvas');c.width=c.height=32;
- c.className='terror-canvas question-icon'+(untinted?' alternate-question-icon':'');
- const ctx=c.getContext('2d',{willReadFrequently:true});
+ c.className='terror-canvas question-icon';
+ const ctx=c.getContext('2d');
  ctx.imageSmoothingEnabled=false;
  ctx.drawImage(terrorSheet,0,0,32,32,0,0,32,32);
- // Keep the original white atlas question mark for Midnight's Alternate slot.
- if(untinted)return c;
- const rule=colorRule(round,variant);
- let primary=rgb(rule?.C),secondary=rgb(rule?.F);
- if(!primary){
-   const point=ROUND_ATLAS_COORDS[round]||[32,320];
-   const sample=document.createElement('canvas');sample.width=sample.height=32;
-   const sc=sample.getContext('2d',{willReadFrequently:true});
-   sc.drawImage(terrorSheet,point[0],point[1],32,32,0,0,32,32);
-   const data=sc.getImageData(0,0,32,32).data;
-   let score=-1;
-   for(let i=0;i<data.length;i+=4){
-     const r=data[i],g=data[i+1],b=data[i+2],high=Math.max(r,g,b),low=Math.min(r,g,b);
-     if(data[i+3]<150||high<75)continue;
-     const value=(high-low)*2+high/2;
-     if(value>score){primary=[r,g,b];score=value}
-   }
-   if(!primary)primary=[190,135,218];
- }
- if(!secondary)secondary=primary.map(x=>Math.round(x*.72));
- const pixels=ctx.getImageData(0,0,32,32),data=pixels.data;
- for(let i=0;i<data.length;i+=4){
-   if(!data[i+3])continue;
-   const bright=Math.floor((data[i]*299+data[i+1]*587+data[i+2]*114)/1000);
-   if(bright<25)continue;
-   const tint=bright>=160?primary:secondary,strength=Math.min(1,bright/220);
-   for(let j=0;j<3;j++)data[i+j]=Math.floor(tint[j]*strength);
- }
- ctx.putImageData(pixels,0,0);
  return c;
 }
 function terrorIcon(id,round=form.round,variant=form.variant,rareChoice=null){
