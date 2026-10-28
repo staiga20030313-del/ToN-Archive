@@ -33,6 +33,95 @@ const joined=/(?:\[Behaviour\]\s*)?OnPlayerJoined\s+(.+?)\s+\(usr_[\da-f-]+\)/i;
 const left=/(?:\[Behaviour\]\s*)?OnPlayerLeft\s+(.+?)\s+\(usr_[\da-f-]+\)/i;
 const death=/\[DEATH\]\[([^\]]+)\]/;
 const page=/Page Collected\s*-\s*(\d+)\s*\/\s*8/i;
+/* Legacy native app: %LOCALAPPDATA%/ToNRoundRecords/terror_log_mappings.json.
+   Imported mappings stay in this browser; they are never uploaded to a server. */
+const MAPPING_STORAGE='ton-archive-vrc-id-mapping-v1';
+function normalizeMappings(data){
+ const rows=Array.isArray(data?.Entries)?data.Entries:Array.isArray(data?.entries)?data.entries:null;
+ if(!rows)throw Error('旧ツールのID対応表（Entries）が見つかりません');
+ const byScope={Classic:new Map(),Alternate:new Map(),'8 Pages':new Map()};
+ const entries=[],known=new Set();
+ for(const row of rows){
+   if(!row||typeof row!=='object')continue;
+   const catalog=String(row.CatalogId??row.catalogId??'').trim().toUpperCase();
+   const raw=String(row.LogId??row.logId??'').trim();
+   if(!raw)continue;
+   const m=/^(T|ALT|8P)(\d{3})$/.exec(catalog);
+   if(!m)throw Error('未対応のアイコンID: '+catalog);
+   const n=Number(m[2]),limit=m[1]==='T'?134:m[1]==='ALT'?36:7;
+   if(n<1||n>limit)throw Error('アイコンIDが範囲外: '+catalog);
+   if(!/^\d+$/.test(raw)||!Number.isSafeInteger(Number(raw)))
+     throw Error('ログIDが不正です: '+catalog);
+   if(known.has(catalog))throw Error('アイコンIDが重複しています: '+catalog);
+   known.add(catalog);
+   const scope=m[1]==='T'?'Classic':m[1]==='ALT'?'Alternate':'8 Pages';
+   const logId=String(Number(raw));
+   if(byScope[scope].has(logId))
+     throw Error(scope+' のログID '+logId+' が重複しています');
+   const iconId=m[1]==='T'?'C'+m[2]:m[1]==='ALT'?'A'+m[2]:'E'+m[2];
+   byScope[scope].set(logId,iconId);
+   entries.push({CatalogId:catalog,LogId:logId,DisplayName:String(row.DisplayName??row.displayName??'')});
+ }
+ if(!entries.length)throw Error('登録済みログIDがありません。元ツールの設定ファイルを確認してください');
+ return {entries,byScope};
+}
+let activeMapping=null,mappingWarning='';
+try{
+ const data=localStorage.getItem(MAPPING_STORAGE);
+ if(data)activeMapping=normalizeMappings(JSON.parse(data));
+}catch(e){mappingWarning=e?.message||String(e)}
+function mappingInfo(){
+ return {count:activeMapping?.entries.length||0,error:mappingWarning};
+}
+function importMappings(data){
+ const validated=normalizeMappings(data);
+ // Only commit after full validation; never erase previously saved IDs on error.
+ localStorage.setItem(MAPPING_STORAGE,JSON.stringify({Entries:validated.entries}));
+ activeMapping=validated;mappingWarning='';
+ return mappingInfo();
+}
+function lookupTerror(logId,round,variant,position,alternate){
+ if(round==='Unbound'){
+   const n=Number(logId);
+   return Number.isSafeInteger(n)&&n>=0&&n<84?'U'+String(n+1).padStart(3,'0'):null;
+ }
+ if(!activeMapping)return null;
+ const byScope=activeMapping.byScope;
+ const key=String(logId);
+ let scope=round==='Alternate'?'Alternate':
+   round==='Midnight'?(position===2?'Alternate':'Classic'):
+   round==='Fog'||round==='Ghost'?(alternate?'Alternate':'Classic'):
+   ['Classic','Punished','Cracked','Sabotage','Bloodbath'].includes(round)?'Classic':
+   round==='Other'&&['Other 3','Other 4'].includes(variant)?'Classic':null;
+ if(scope)return byScope[scope].get(key)||null;
+ if(round==='8 Pages'){
+   const found=Object.values(byScope).map(map=>map.get(key)).filter(Boolean);
+   return found.length===1?found[0]:null;
+ }
+ return null;
+}
+function applyMappingToRound(r){
+ const numbers=String(r.rawKillerIds||'').trim().split(/\s+/).filter(Boolean);
+ const slots=r.round==='Moon'||r.round==='Other'&&!['Other 3','Other 4'].includes(r.variant)?0:
+   r.round==='Midnight'?3:r.round==='Bloodbath'?
+   (r.variant==='DT'?2:r.variant==='EX'?1:3):1;
+ r.terrors=[];r.terrorSlots=[];r.unmappedKillerIds=[];
+ for(let i=0;i<slots;i++){
+   const raw=numbers[i],number=Number(raw);
+   if(raw==null||!/^\d+$/.test(raw)||!Number.isSafeInteger(number)){
+     r.terrorSlots.push(null);continue;
+   }
+   const id=lookupTerror(String(number),r.round,r.variant,i,r.alternate);
+   r.terrorSlots.push(id);
+   if(id){if(!r.terrors.includes(id))r.terrors.push(id);}
+   else if(!r.unmappedKillerIds.includes(String(number)))r.unmappedKillerIds.push(String(number));
+ }
+ return r;
+}
+function applyMappingsToScan(scan){
+ if(scan&&Array.isArray(scan.rounds))scan.rounds.forEach(applyMappingToRound);
+ return scan;
+}
 function normalized(s){return String(s||'').replace(ALT_QUALIFIER,'').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]/gu,'')}
 function mapLookup(name,maps){
  const value=String(name||'').trim().toLowerCase();
@@ -75,14 +164,7 @@ function analyze(contents,filename,maps){
      else if(r.variant==='EX')r.variant='BB';
    }
    r.map=mapLookup(r.mapName,maps);
-   r.terrors=[];
-   r.unmappedKillerIds=[];
-   const slots=r.round==='Midnight'?3:r.round==='Bloodbath'?(r.variant==='DT'?2:r.variant==='EX'?1:3):1;
-   for(const number of numbers.slice(0,slots)){
-     if(!Number.isSafeInteger(number)||number<0)continue;
-     if(r.round==='Unbound'&&number<84)r.terrors=['U'+String(number+1).padStart(3,'0')];
-     else if(!r.unmappedKillerIds.includes(String(number)))r.unmappedKillerIds.push(String(number));
-   }
+   applyMappingToRound(r);
    r.durationSeconds=r.endMs==null?null:Math.max(0,Math.floor((r.endMs-(r.spawnMs??r.startMs))/1000));
    r.estimatedPlayers=r.sawRoster?Math.max(r.peak,r.observed.size):null;
    r.estimatedSurvivors=r.estimatedPlayers==null?null:Math.max(0,r.estimatedPlayers-r.deathNames.size);
@@ -156,5 +238,5 @@ function analyze(contents,filename,maps){
  finish(active);
  return {rounds,lines,joins,deaths};
 }
-window.TON_VRC_LOG={analyze};
+window.TON_VRC_LOG={analyze,importMappings,applyMappingsToScan,mappingInfo};
 })();
