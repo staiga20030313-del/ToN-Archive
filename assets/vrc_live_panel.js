@@ -77,18 +77,64 @@ function renderScan(){
       updateSelectedCount();
     });
     const body=document.createElement('span');body.className='vrc-live-round-content';
-    const headline=document.createElement('span');headline.className='vrc-live-round-head';
+    const headline=document.createElement('span');headline.className='vrc-live-card-top';
+    const roundSprite=document.createElement('span');roundSprite.className='vrc-live-round-icon';
+    // Reuse the archive's actual 32x32 atlas sprite, not a scaled screenshot.
+    const roundArt=typeof roundIcon==='function'?
+      (roundIcon(r.round,r.variant)||roundIcon(r.round)):null;
+    if(roundArt)roundSprite.append(roundArt);
+    else roundSprite.textContent='?';
+    const heading=document.createElement('span');heading.className='vrc-live-head-info';
+    const roundName=document.createElement('strong');roundName.className='vrc-live-round-name';
+    roundName.textContent=[r.round||'未対応',r.variant].filter(Boolean).join(' / ');
     const time=document.createElement('span');time.className='vrc-live-round-time';
     time.textContent=formatDate(r.start).slice(5);
-    const round=document.createElement('strong');
-    round.textContent=[r.round||'未対応',r.variant].filter(Boolean).join(' / ');
-    headline.append(time,round);
-    const map=document.createElement('span');map.className='vrc-live-map';
-    map.textContent=r.map?mapName(r.map):r.mapName||'MAP不明';
+    heading.append(roundName,time);headline.append(roundSprite,heading);
+    // Unverified killer IDs must stay as question marks. Never guess an icon.
+    const terrorRow=document.createElement('span');terrorRow.className='vrc-live-terror-row';
+    const known=Array.isArray(r.terrors)?r.terrors:[];
+    const slots=r.round==='Moon'||r.round==='Other'?0:
+      r.round==='Midnight'?3:r.round==='Bloodbath'?
+      (r.variant==='DT'?2:3):1;
+    const terrorGroup=document.createElement('span');terrorGroup.className='vrc-live-terror-icons';
+    for(let i=0;i<slots;i++){
+      const id=known[r.round==='Bloodbath'&&r.variant==='EX'?0:i];
+      const art=id&&typeof terrorIcon==='function'?
+        terrorIcon(id,r.round,r.variant):typeof questionIcon==='function'?
+        questionIcon(r.round,r.variant):null;
+      const cell=document.createElement('span');cell.className='vrc-live-terror-cell';
+      if(art)cell.append(art);else cell.textContent='?';
+      cell.title=id?'テラー '+id:
+        (r.unmappedKillerIds?.length?'未確認ログID: '+r.unmappedKillerIds.join(', '):'テラー未確定');
+      terrorGroup.append(cell);
+    }
+    if(slots)terrorRow.append(terrorGroup);
+    const mapRow=document.createElement('span');mapRow.className='vrc-live-map-row';
+    const badge=r.map&&typeof mapBadge==='function'?mapBadge(r.map):null;
+    if(badge){mapRow.append(badge);mapRow.title=mapName(r.map);}
+    else{
+      const mapText=document.createElement('span');mapText.className='vrc-live-map';
+      mapText.textContent=r.mapName||'MAP不明';
+      mapText.title=mapText.textContent;mapRow.append(mapText);
+    }
+    const people=document.createElement('span');people.className='vrc-live-people';
+    for(const [label,value] of [
+      ['生存',r.estimatedSurvivors],['参加',r.estimatedPlayers],['新規',null]
+    ]){
+      const stat=document.createElement('span');stat.className='vrc-live-person';
+      const caption=document.createElement('span');caption.className='vrc-live-person-label';
+      caption.textContent=label;
+      const number=document.createElement('strong');number.className='vrc-live-person-value';
+      number.textContent=value==null?(label==='新規'?'-':'?'):String(value);
+      stat.append(caption,number);people.append(stat);
+    }
     const info=document.createElement('span');info.className='vrc-live-meta';
-    const people=r.estimatedPlayers==null?'人数 ?':'人数 約'+r.estimatedPlayers;
-    info.textContent=[duplicate?'取込済み':!r.round?'未対応ラウンド':r.ended?'終了':'進行中',people,r.status].filter(Boolean).join(' · ');
-    body.append(headline,map,info);node.append(checkbox,body);items.append(node);
+    info.textContent=[duplicate?'取込済み':!r.round?'ラウンド未対応':r.ended?'終了':'進行中',r.status].filter(Boolean).join(' · ');
+    info.title=info.textContent;
+    body.append(headline);
+    if(slots)body.append(terrorRow);
+    body.append(mapRow,people,info);
+    node.append(checkbox,body);items.append(node);
   }
   updateSelectedCount();
 }
