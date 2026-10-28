@@ -792,6 +792,50 @@ html,body,button,input,select,textarea,option{
 .vrc-live-person-value{font-size:12px;line-height:1.2;color:#e7d8f4;font-variant-numeric:tabular-nums;font-weight:700;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .vrc-live-person:first-child .vrc-live-person-value{color:#a7e3c5}
 .vrc-live-panel .vrc-live-meta{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9px;line-height:1.25}
+
+/* VRChat log results v2: one-click cards, round icon and terrors on the same line. */
+@media(min-width:1121px){
+  .archive-workspace{grid-template-columns:minmax(0,1fr) minmax(0,3.75fr) minmax(0,1.25fr)!important}
+}
+.vrc-live-panel .vrc-live-round{
+  display:flex!important;flex-direction:column!important;align-items:stretch!important;
+  width:100%;min-width:0;min-height:0;height:auto!important;
+  padding:8px 7px!important;gap:0!important;overflow:hidden;
+  text-align:left;cursor:pointer;
+}
+.vrc-live-panel .vrc-live-round:disabled{cursor:default}
+.vrc-live-panel .vrc-live-round.is-selected{
+  background:#49315c!important;border-color:#cba6ec!important;
+  box-shadow:inset 0 0 0 1px #a778cd66!important
+}
+.vrc-live-panel .vrc-live-round.is-selected:hover{background:#513563!important}
+.vrc-live-panel .vrc-live-round-content{
+  display:flex!important;flex-direction:column!important;gap:5px!important;
+  width:100%;max-width:100%;min-width:0;overflow:visible!important
+}
+.vrc-live-panel .vrc-live-card-top{
+  display:flex!important;flex-wrap:nowrap!important;align-items:center!important;
+  justify-content:flex-start!important;gap:12px!important;
+  width:100%;min-width:0;min-height:32px;overflow:visible!important
+}
+.vrc-live-panel .vrc-live-round-icon{
+  flex:0 0 32px!important;min-width:32px!important;width:32px!important;
+  height:32px!important;overflow:visible
+}
+.vrc-live-panel .vrc-live-terror-icons{
+  display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;
+  justify-content:flex-start;align-items:center;gap:4px!important;
+  width:max-content;max-width:none!important;min-width:max-content!important;
+  flex:0 0 auto!important;overflow:visible!important
+}
+.vrc-live-panel .vrc-live-terror-cell{
+  flex:0 0 32px!important;min-width:32px!important;width:32px!important;
+  height:32px!important;overflow:visible!important
+}
+.vrc-live-panel .vrc-live-round-time{
+  display:block;min-width:0;width:100%;font-size:9px;
+  line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.13">v1.0.13</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
