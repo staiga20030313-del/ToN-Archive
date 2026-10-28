@@ -942,8 +942,42 @@ html,body,button,input,select,textarea,option{
 .vrc-live-mapping{display:flex;flex-direction:column;gap:4px;min-width:0;margin:8px 0 4px}
 .vrc-live-mapping button{min-width:0;width:100%;font-size:10px;line-height:1.3;padding:7px 3px}
 #vrcLiveMappingStatus{display:block;max-width:100%;font-size:10px;line-height:1.4;color:#b8a9c6;overflow-wrap:anywhere}
+
+/* Visual per-terror numeric ID editor, using the original game icon atlas. */
+body.terror-id-editor-open{overflow:hidden}
+.terror-id-editor[hidden]{display:none!important}
+.terror-id-editor{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(7,5,10,.87);padding:10px;box-sizing:border-box}
+.terror-id-dialog{display:flex;flex-direction:column;gap:10px;width:min(100%,980px);height:min(880px,calc(100dvh - 20px));min-height:0;background:#181320;border:1px solid #72578a;box-shadow:0 18px 60px #000b;padding:13px;border-radius:7px;box-sizing:border-box;color:#eae0f2}
+.terror-id-header{display:flex;align-items:center;gap:12px;flex:0 0 auto;min-width:0}
+.terror-id-header strong{font-size:17px;white-space:nowrap}
+#terrorIdEditorCount{font-size:11px;color:#c9b6d8}
+#terrorIdEditorClose{margin-left:auto;white-space:nowrap;font-size:11px}
+.terror-id-toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:0 0 auto}
+.terror-id-tabs{display:flex;gap:5px;align-items:center}
+.terror-id-tab{padding:7px 10px;font-size:11px;border-color:#604971!important;background:#251b2d!important;color:#c9b6da}
+.terror-id-tab.active{background:#513663!important;border-color:#c396e3!important;color:#fff}
+#terrorIdEditorSearch{flex:1 1 170px;min-width:110px;height:33px;max-width:280px;font-size:12px}
+.terror-id-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(111px,1fr));grid-auto-rows:max-content;align-content:start;gap:8px;flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:2px 5px 6px 2px}
+.terror-id-tile{display:flex;flex-direction:column;gap:4px;min-height:131px;align-items:center;min-width:0;padding:9px 5px 7px;background:#231b2c;border:1px solid #493650;border-radius:5px;box-sizing:border-box;text-align:center}
+.terror-id-tile:focus-within{border-color:#bd91de;background:#30213b}
+.terror-id-icon{display:flex;width:52px;height:52px;align-items:center;justify-content:center;flex:0 0 52px;font-size:11px;overflow:hidden}
+.terror-id-icon .terror-canvas{width:48px!important;height:48px!important;min-width:48px!important;flex:0 0 48px!important;image-rendering:pixelated}
+.terror-id-icon .terror-icon{font-size:12px;max-width:100%;word-break:break-all}
+.terror-id-tile-code{font-size:10px;font-weight:700;line-height:1.1;color:#decaf0;white-space:nowrap}
+.terror-id-tile-name{font-size:9px;line-height:1.2;color:#b7a6c5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;height:12px}
+.terror-id-field{min-width:0;width:90%;height:26px;padding:2px 4px;border-radius:4px;border:1px solid #675473;background:#120e1b;color:#f4edfa;font-size:12px;text-align:center;box-sizing:border-box;font-variant-numeric:tabular-nums}
+.terror-id-field:focus{outline:1px solid #c79de5;border-color:#c79de5}
+.terror-id-tile.invalid{border-color:#ec828d;background:#41212b}
+.terror-id-tile.invalid input{border-color:#ec828d;color:#ffd9de}
+.terror-id-noresults{grid-column:1/-1;font-size:12px;color:#c0accd;padding:24px;text-align:center}
+.terror-id-footer{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;flex:0 0 auto;border-top:1px solid #493852;padding-top:9px}
+#terrorIdEditorNotice{font-size:11px;color:#c5b2d1;flex:1 1 240px;line-height:1.5}
+#terrorIdEditorNotice[data-error="true"]{color:#ffc6cb}
+.terror-id-actions{display:flex;gap:7px;align-items:center}
+.terror-id-actions button{font-size:11px;padding:8px}
+@media(max-width:560px){.terror-id-dialog{padding:9px}.terror-id-grid{grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:5px}.terror-id-tile{padding:6px 3px}.terror-id-toolbar{gap:5px}.terror-id-tab{font-size:10px;padding:7px}.terror-id-actions{width:100%;justify-content:flex-end}}
 </style></head><body><main class="shell">
-<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.27">v1.0.27</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
+<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.28">v1.0.28</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
@@ -971,6 +1005,7 @@ html,body,button,input,select,textarea,option{
  <div class="vrc-live-help">ログフォルダを接続すると自動検出します。</div>
  <div class="vrc-live-details" id="vrcLiveDetails">AppData\\LocalLow\\VRChat\\VRChat</div>
  <div class="vrc-live-mapping">
+  <button type="button" id="vrcLiveIdEditorOpen" title="テラー画像を見ながらログの数値IDを登録">テラーIDを画像で登録</button>
   <button type="button" id="vrcLiveMappingButton" title="旧ツールで登録したテラー名・数値ログIDを引き継ぎます">テラーID対応表を読込</button>
   <input id="vrcLiveMappingFile" type="file" accept=".json,application/json" hidden>
   <span id="vrcLiveMappingStatus" aria-live="polite">ID対応: 未登録</span>
@@ -986,8 +1021,17 @@ html,body,button,input,select,textarea,option{
 </div>
 </main>
 
+<div id="terrorIdEditor" class="terror-id-editor" hidden role="dialog" aria-modal="true" aria-label="テラーのログID編集">
+ <div class="terror-id-dialog">
+  <div class="terror-id-header"><strong>テラーID編集</strong><span id="terrorIdEditorCount">0/177件登録</span><button type="button" id="terrorIdEditorClose" aria-label="閉じる">閉じる ×</button></div>
+  <div class="terror-id-toolbar"><div id="terrorIdEditorTabs" class="terror-id-tabs"></div><input type="search" class="field" id="terrorIdEditorSearch" placeholder="名前・IDで検索" aria-label="テラーを検索"></div>
+  <div id="terrorIdEditorGrid" class="terror-id-grid"></div>
+  <div class="terror-id-footer"><span id="terrorIdEditorNotice" aria-live="polite">画像を見ながらログIDを登録</span><div class="terror-id-actions"><button type="button" id="terrorIdEditorExport">対応表を書き出す</button><button type="button" class="primary" id="terrorIdEditorSave">保存</button></div></div>
+ </div>
+</div>
 <div class="status" id="toast" role="status"></div>
 <script src="./assets/terror_config.js"></script><script src="./assets/map_config.js"></script>
+<script src="./assets/builtin_terror_id_mapping.js"></script>
 <script src="./assets/vrc_log_import.js"></script>
 <script>
 'use strict';
@@ -2260,4 +2304,4 @@ function resizeArchiveInterface(){
 window.addEventListener('resize',resizeArchiveInterface,{passive:true});
 resizeArchiveInterface();
 summaryInit();
-</script><script src="./assets/vrc_live_panel.js"></script></body></html>
+</script><script src="./assets/vrc_live_panel.js"></script><script src="./assets/terror_id_editor.js"></script></body></html>
