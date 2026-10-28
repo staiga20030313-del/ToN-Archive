@@ -209,6 +209,11 @@ function analyze(contents,filename,maps){
        if(secs<=80)failed++;
      }else{if(secs>=170)survival++;else failed++}
    }
+   // Mirror the original WinForms VrcLogDetector survival/death flag score.
+   // An incomplete round has zero flags; this is a ranking hint, not proof of survival.
+   r.survivalFlags=survival;
+   r.deathFlags=failed;
+   r.survivalLevel=survival-failed;
    r.status=!r.ended?'途中・不明':survival-failed>0?'要確認':'勝利未確認';
    // Estimates are not certified player counts. The UI marks them as such.
    rounds.push(r);
