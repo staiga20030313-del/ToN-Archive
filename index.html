@@ -977,8 +977,39 @@ body.terror-id-editor-open{overflow:hidden}
 @media(max-width:560px){.terror-id-dialog{padding:9px}.terror-id-grid{grid-template-columns:repeat(auto-fill,minmax(94px,1fr));gap:5px}.terror-id-tile{padding:6px 3px}.terror-id-toolbar{gap:5px}.terror-id-tab{font-size:10px;padding:7px}.terror-id-actions{width:100%;justify-content:flex-end}}
 /* Keep log detection; hide obsolete connection and ID-management controls. */
 .vrc-live-controls,.vrc-live-mapping{display:none!important}
+
+/* VRC detector: 28px sprites and tighter two-line round cards. */
+.vrc-live-panel .vrc-live-rounds{gap:4px!important}
+.vrc-live-panel .vrc-live-rounds > .vrc-live-round{
+  min-height:60px!important;padding:3px 5px!important;
+}
+.vrc-live-panel .vrc-live-round-content{gap:3px!important}
+.vrc-live-panel .vrc-live-card-top{
+  min-height:28px!important;height:28px!important;gap:8px!important;
+}
+.vrc-live-panel .vrc-live-round-icon{
+  position:relative;flex:0 0 28px!important;
+  width:28px!important;min-width:28px!important;height:28px!important;
+}
+.vrc-live-panel .vrc-live-round-icon .round-sprite{
+  position:absolute;left:0;top:0;width:32px!important;height:32px!important;
+  transform:scale(.875);transform-origin:top left;
+}
+.vrc-live-panel .vrc-live-terror-icons{
+  gap:3px!important;max-width:calc(100% - 36px)!important;
+}
+.vrc-live-panel .vrc-live-terror-cell{
+  width:28px!important;min-width:28px!important;flex:0 0 28px!important;height:28px!important;
+}
+.vrc-live-panel .vrc-live-terror-cell .terror-canvas,
+.vrc-live-panel .vrc-live-terror-cell .question-icon,
+.vrc-live-panel .vrc-live-terror-cell .round-sprite{
+  width:28px!important;min-width:28px!important;
+  height:28px!important;min-height:28px!important;flex:0 0 28px!important;
+}
+.vrc-live-panel .vrc-live-map-row{gap:5px!important}
 </style></head><body><main class="shell">
-<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.32">v1.0.32</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
+<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.33">v1.0.33</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
