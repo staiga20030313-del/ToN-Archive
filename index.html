@@ -714,8 +714,46 @@ html,body,button,input,select,textarea,option{
 .players-compact .count-step:hover{background:var(--edge,#48384f)}
 .players-compact .count-step:active{filter:brightness(1.25)}
 .players-compact .count-step:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+/* 1:4:1 layout. Keep desktop results centered and show live logs on right. */
+.archive-workspace{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,4fr) minmax(0,1fr)!important;gap:10px;align-items:start}
+.archive-workspace>.entry-panel,.archive-workspace>.results-workspace,.archive-workspace>.vrc-live-panel{min-width:0}
+.vrc-live-panel{margin:0!important;padding:11px 9px!important;position:sticky;top:12px;max-height:calc(100vh - 25px);min-height:350px;display:flex;flex-direction:column;overflow:hidden}
+.vrc-live-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:5px;padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid #4d3a5a}
+.vrc-live-head strong{font-size:14px}
+#vrcLiveStatus{font-size:10px;color:#b4a5c1;overflow-wrap:anywhere}
+#vrcLiveStatus[data-state="watching"]{color:#a5dfbe}
+#vrcLiveStatus[data-state="error"]{color:#ffc0c8}
+.vrc-live-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+.vrc-live-controls button{min-width:0;padding:7px 3px;font-size:10px;white-space:nowrap}
+.vrc-live-help,.vrc-live-note{font-size:10px;line-height:1.45;color:#aa9eb5;margin:8px 0 5px}
+.vrc-live-details{font-size:10px;line-height:1.45;color:#ddd0e9;overflow-wrap:anywhere;min-height:27px;max-height:64px;overflow:auto}
+.vrc-live-label{font-size:10px;margin:9px 0 4px;color:#b8acc5}
+.vrc-live-select{width:100%;height:30px;padding:4px;font-size:10px}
+.vrc-live-section{display:flex;align-items:center;justify-content:space-between;gap:5px;margin:12px 0 6px}
+.vrc-live-section strong{font-size:11px}
+.vrc-live-section button{padding:3px 6px;font-size:10px}
+.vrc-live-rounds{min-height:100px;overflow:auto;overscroll-behavior:contain;flex:1 1 auto;display:flex;flex-direction:column;gap:5px;padding:0 2px 2px 0}
+.vrc-live-round{min-height:56px;width:100%;padding:7px 6px;text-align:left;background:#181320;border:1px solid #4c395b;border-radius:4px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.vrc-live-round:hover{background:#342541;border-color:#ae82d4}
+.vrc-live-round.imported{opacity:.65}
+.vrc-live-round-head{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-width:0}
+.vrc-live-round-head strong{font-size:10px;overflow-wrap:anywhere}
+.vrc-live-round-time,.vrc-live-map,.vrc-live-meta{font-size:10px;line-height:1.3;overflow-wrap:anywhere;color:#ae9db9}
+.vrc-live-round-time{font-variant-numeric:tabular-nums;color:#e1cbf0}
+.vrc-live-map{color:#ded3e8}
+.vrc-live-empty{font-size:11px;color:#b4a6c1;text-align:center;padding:20px 5px;line-height:1.5}
+.vrc-live-note{flex:0 0 auto;border-top:1px solid #493a54;padding-top:6px}
+@media(max-width:1120px) and (min-width:721px){
+ .archive-workspace{grid-template-columns:minmax(172px,1fr) minmax(0,4fr)!important}
+ .archive-workspace>.vrc-live-panel{grid-column:2;position:static;max-height:420px;min-height:230px;width:100%}
+}
+@media(max-width:720px){
+ .archive-workspace{display:flex!important;flex-direction:column!important}
+ .archive-workspace>.vrc-live-panel{width:100%;position:static;max-height:420px;min-height:230px}
+}
 </style></head><body><main class="shell">
-<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.4">v1.0.4</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
+<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.5">v1.0.5</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
@@ -736,7 +774,19 @@ html,body,button,input,select,textarea,option{
 <div class="results-workspace">
  <section class="panel preview-panel" aria-label="追加予定の成果"><div class="preview-topline"><span class="preview-heading" id="previewHeading">追加予定の成果</span><span class="preview-hint" id="previewHint">左の項目から入力</span></div><div class="preview-content"><div class="preview-display" id="previewDisplay" aria-live="polite"></div></div></section>
  <section class="panel records-panel"><div class="headline"><div><h2>成果まとめ <span class="pill" id="recordCount">0</span></h2></div><div class="list-tools"><button class="chip" id="summaryEdit">編集</button><button class="chip" id="exportPng">PNG出力</button><div class="utility-row"><button class="danger" id="deleteSession">周回を削除</button><button id="export">JSONを書き出す</button><button id="importButton">JSONを読み込む</button><input accept=".json,application/json" hidden="" id="importFile" type="file"/><button id="vrcLogButton" title="VRChatのoutput_log_*.txtをローカルで解析">VRCログ</button><input id="vrcLogFile" type="file" accept=".txt,text/plain" hidden/></div><input aria-label="記録を検索" class="field" id="search" placeholder="記録を検索" style="max-width:200px"/><button class="chip on" id="listView">テキスト</button><button class="chip" id="iconView">アイコン形式</button></div></div><div class="records" id="records"></div></section>
-</div></div>
+</div>
+<aside class="panel vrc-live-panel" id="vrcLivePanel" aria-label="VRChatログ監視">
+ <div class="vrc-live-head"><strong>VRCログ</strong><span id="vrcLiveStatus" data-state="idle">未接続</span></div>
+ <div class="vrc-live-controls"><button type="button" id="vrcLiveConnect">フォルダ接続</button><button type="button" id="vrcLiveManual">ファイル読込</button></div>
+ <div class="vrc-live-help">ログフォルダを接続すると自動検出します。</div>
+ <div class="vrc-live-details" id="vrcLiveDetails">AppData\\LocalLow\\VRChat\\VRChat</div>
+ <label for="vrcLiveFiles" class="vrc-live-label">ログファイル</label>
+ <select id="vrcLiveFiles" class="field vrc-live-select" aria-label="監視するログファイル"><option value="latest">最新ログ（自動）</option></select>
+ <div class="vrc-live-section"><strong>検出ラウンド <span id="vrcLiveCount">0件</span></strong><button type="button" id="vrcLiveRefresh">更新</button></div>
+ <div id="vrcLiveRounds" class="vrc-live-rounds" aria-live="polite"><div class="vrc-live-empty">ログを接続すると検出結果が表示されます</div></div>
+ <div class="vrc-live-note">候補を選ぶと取込画面が開きます。人数は推定値です。</div>
+</aside>
+</div>
 </main>
 <dialog id="vrcLogDialog" aria-labelledby="vrcLogTitle">
   <div class="vrc-log-head"><h2 id="vrcLogTitle">VRCログから成果を取り込む</h2><button id="vrcLogClose" type="button">閉じる</button></div>
@@ -1992,6 +2042,7 @@ function vrcLogRender(){
    details.append(title,meta);label.append(check,details);rows.append(label);
  }
  vrcLogUpdateSelection();
+ window.TON_VRC_PANEL?.renderScan();
 }
 function vrcLogUpdateSelection(){
  const checks=[...$('vrcLogRows').querySelectorAll('input[type="checkbox"]')];
@@ -2056,4 +2107,4 @@ function resizeArchiveInterface(){
 window.addEventListener('resize',resizeArchiveInterface,{passive:true});
 resizeArchiveInterface();
 summaryInit();
-</script></body></html>
+</script><script src="./assets/vrc_live_panel.js"></script></body></html>
