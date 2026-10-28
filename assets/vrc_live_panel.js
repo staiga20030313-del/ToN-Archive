@@ -209,9 +209,17 @@ function renderScan(){
     const formatCount=value=>Number.isFinite(value)&&value>=0?String(value):'?';
     const survived=formatCount(r.estimatedSurvivors);
     const players=formatCount(r.estimatedPlayers);
-     const mainCount=document.createElement('strong');mainCount.className='vrc-live-count-ratio';
+    const mainCount=document.createElement('strong');mainCount.className='vrc-live-count-ratio';
     mainCount.textContent=survived+'/'+players;
     people.append(mainCount);
+    // Match the desktop log detector's measured round duration.
+    // Do not manufacture seconds for a round with no recorded end.
+    const seconds=Number.isFinite(r.durationSeconds)&&r.durationSeconds>=0?
+      Math.floor(r.durationSeconds):null;
+    const duration=document.createElement('span');duration.className='vrc-live-duration';
+    duration.textContent=seconds===null?'—':seconds+'s';
+    duration.title=seconds===null?'ラウンド秒数: 未確定':'ラウンド秒数: '+seconds+'秒';
+    people.append(duration);
     people.title='推定 生存 / 参加: '+survived+'/'+players;
     const statusLabel=[duplicate?'取込済み':!r.round?'ラウンド未対応':r.ended?'終了':'進行中',r.status,
       '生存フラグ '+(r.survivalFlags??0)+' / 死亡フラグ '+(r.deathFlags??0)].filter(Boolean).join(' · ');
