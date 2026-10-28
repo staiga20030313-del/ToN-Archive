@@ -1,0 +1,77 @@
+name: Auto-bump visible app version
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - index.html
+      - 'assets/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ton-archive-version-bump
+  cancel-in-progress: false
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Increment patch version unless the change already updated it
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+
+          file = Path("index.html")
+          contents = file.read_text(encoding="utf-8")
+          pattern = re.compile(
+              r'(<span class="app-version" aria-label="バージョン )'
+              r'(\d+\.\d+\.\d+)(">v)(\d+\.\d+\.\d+)(</span>)'
+          )
+          current = pattern.search(contents)
+          if current is None:
+              raise SystemExit("Version badge not found in index.html")
+          if current.group(2) != current.group(4):
+              raise SystemExit("Visible and accessibility versions differ")
+          previous_file = subprocess.run(
+              ["git", "show", "HEAD^:index.html"],
+              capture_output=True, text=True, check=False
+          )
+          if previous_file.returncode == 0:
+              previous = pattern.search(previous_file.stdout)
+              if previous is None:
+                  raise SystemExit("Previous version badge missing")
+              if previous.group(2) != current.group(2):
+                  print("Version was already updated in this commit; skip")
+                  raise SystemExit(0)
+          major, minor, patch = map(int, current.group(2).split("."))
+          next_version = f"{major}.{minor}.{patch + 1}"
+          new_badge = (
+              f"{current.group(1)}{next_version}"
+              f"{current.group(3)}{next_version}{current.group(5)}"
+          )
+          file.write_text(
+              contents[:current.start()] + new_badge + contents[current.end():],
+              encoding="utf-8"
+          )
+          print(f"Bumped v{current.group(2)} -> v{next_version}")
+          PY
+      - name: Commit the incremented version
+        shell: bash
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No automatic version bump needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "chore: bump visible app version [skip ci]"
+          git push
