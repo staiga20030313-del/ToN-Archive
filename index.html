@@ -1116,6 +1116,25 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:1px solid 
 ::-webkit-scrollbar{width:7px;height:7px}
 ::-webkit-scrollbar-track{background:#080808}
 ::-webkit-scrollbar-thumb{background:#505050;border:1px solid #101010}
+
+/* Final monochrome pass: remove inherited purple text and selection colors. */
+:root{--summary-accent:#aaa!important;--summary-background:#080808!important;--map-color:#bbb}
+body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summary-group-head,.summary-group-label,.summary-counts,.summary-new,.summary-grip,.summary-unbound-label,.summary-context-menu,.summary-menu-option,.summary-column-end,.summary-empty,.terror-name,#terrorNamePreview,.preview-item-text,.preview-metrics,.vrc-live-panel,.vrc-live-round,.vrc-live-round-head,.vrc-live-round-time,.vrc-live-map,.vrc-live-meta,.vrc-live-details,.vrc-live-label,.vrc-live-help,.vrc-live-note,.vrc-log-help,.vrc-log-row,.vrc-log-row small,#vrcLogSummary{color:#d6d6d6!important}
+.summary-group{--summary-accent:#8e8e8e!important;background:#080808!important;border-color:#777!important}
+.summary-group.highlights{border-color:#aaa!important}
+.summary-group.highlights .summary-group-label{color:#eee!important}
+.summary-context-menu,.vrc-log-rows,#vrcLogDialog,.vrc-round-filter-popover{background:#080808!important;border-color:#555!important;color:#ddd!important}
+.summary-menu-option:hover,.vrc-log-row:hover,.vrc-live-round:hover{background:#202020!important}
+.summary-menu-option.checked{color:#fff!important}
+.summary-drop-target,.summary-column-end.summary-drop-target{outline-color:#bcbcbc!important}
+.tile.active,.tilegrid.terror-layout .tile:not(.unbound).active,.chip.on,.pick.selected,.vrc-live-round.is-selected,.vrc-log-view-controls button.on,.vrc-round-filter-tile.on{
+ background:#292929!important;border-color:#aaa!important;outline-color:#bcbcbc!important;color:#fff!important
+}
+.tile.active .terror-icon,.tilegrid.terror-layout .tile:hover .terror-icon{background:#222!important;border-color:#aaa!important;color:#fff!important}
+.vrc-live-round.is-selected,.vrc-live-round:focus-visible{box-shadow:inset 0 0 0 1px #aaa!important}
+.vrc-summary-drag-target{outline:1px dashed #d0d0d0!important;outline-offset:-3px}
+.vrc-live-round.is-dragging{opacity:.5}
+::selection{background:#555;color:#fff}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.44">v1.0.44</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
