@@ -87,6 +87,9 @@ if(!activeMapping){
 function mappingInfo(){
  return {count:activeMapping?.entries.length||0,error:mappingWarning,source:mappingSource};
 }
+function mappingEntries(){
+ return activeMapping?.entries.map(row=>({...row}))||[];
+}
 function importMappings(data){
  const validated=normalizeMappings(data);
  // Never erase existing IDs on a rejected import or storage failure.
@@ -252,5 +255,5 @@ function analyze(contents,filename,maps){
  finish(active);
  return {rounds,lines,joins,deaths};
 }
-window.TON_VRC_LOG={analyze,importMappings,applyMappingsToScan,mappingInfo};
+window.TON_VRC_LOG={analyze,importMappings,applyMappingsToScan,mappingInfo,mappingEntries};
 })();
