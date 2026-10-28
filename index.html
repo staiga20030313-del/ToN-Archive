@@ -1294,14 +1294,14 @@ function mapBadge(value){
  const family='"PixelMplus12","Yu Gothic UI",sans-serif';
  const text=entry.name.trim().replace(/\s+/g,' ');
  const textWidth=92;
- const font=(px)=>{ctx.font='700 '+px+'px '+family};
+ const font=(px)=>{ctx.font='400 '+px+'px '+family};
  const measure=(str,px)=>{font(px);return ctx.measureText(str).width};
- let lines=null,size=21;
+ let lines=null,size=17;
  // The old fallback shrank long multi-word names to unreadable single lines.
  // Keep short labels at 21px; wrap the rest instead of reducing their width.
- if(measure(text,21)<=textWidth)lines=[text];
+ if(measure(text,17)<=textWidth)lines=[text];
  else if(!text.includes(' ')){
-   for(let px=20;px>=18;px--){
+   for(let px=16;px>=14;px--){
      if(measure(text,px)<=textWidth){size=px;lines=[text];break}
    }
  }
@@ -1312,7 +1312,7 @@ function mapBadge(value){
    }else{
      for(let i=1;i<text.length;i++)splits.push([text.slice(0,i),text.slice(i)]);
    }
-   for(let px=18;px>=12&&!lines;px--){
+   for(let px=16;px>=11&&!lines;px--){
      const fitting=splits.filter(pair=>measure(pair[0],px)<=textWidth&&measure(pair[1],px)<=textWidth);
      if(fitting.length){
        fitting.sort((a,b)=>Math.abs(measure(a[0],px)-measure(a[1],px))-Math.abs(measure(b[0],px)-measure(b[1],px)));
@@ -1321,8 +1321,8 @@ function mapBadge(value){
    }
    if(!lines){
      // A label wider than both full lines is clipped, never distorted.
-     lines=splits.sort((a,b)=>Math.max(measure(a[0],12),measure(a[1],12))-Math.max(measure(b[0],12),measure(b[1],12)))[0]||[text];
-     size=12;
+     lines=splits.sort((a,b)=>Math.max(measure(a[0],11),measure(a[1],11))-Math.max(measure(b[0],12),measure(b[1],12)))[0]||[text];
+     size=11;
    }
  }
  ctx.save();
