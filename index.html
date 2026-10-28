@@ -314,6 +314,10 @@ button:not(:disabled):active{
 .archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)){--terror-icon-size:32px}
 .archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)) .terror-canvas,
 .archive-workspace .entry-icon-row #terrorButton:has(>:nth-child(2)) .question-icon{width:32px;height:32px;flex:0 0 32px}
+/* Unselected Midnight slots retain their red/white hues; only brightness is reduced. */
+.archive-workspace .entry-icon-row #terrorButton .midnight-empty-slot{
+ filter:brightness(.72);
+}
 .archive-workspace .entry-icon-row #roundButton .round-sprite{flex:0 0 32px}
 .archive-workspace .players-compact{padding:5px 3px!important;gap:2px!important}
 .archive-workspace .players-compact .control{min-width:0}
@@ -1083,10 +1087,12 @@ function updateForm(){
    (form.variant==='EX'?Array(3).fill(chosen[0]||null):
      [...chosen.slice(0,max),...Array(Math.max(0,max-chosen.length)).fill(null)]):
    chosen;
- t.replaceChildren(...(slots.length?slots:[null]).map((id,index)=>
-   id?terrorIcon(id,form.round,form.variant,form.rareChoices?.[id]):
-      questionIcon(form.round,form.variant,form.round==='Midnight'&&index===2)
- ));
+ t.replaceChildren(...(slots.length?slots:[null]).map((id,index)=>{
+   if(id)return terrorIcon(id,form.round,form.variant,form.rareChoices?.[id]);
+   const placeholder=questionIcon(form.round,form.variant,form.round==='Midnight'&&index===2);
+   if(form.round==='Midnight')placeholder.classList.add('midnight-empty-slot');
+   return placeholder;
+  }));
  t.classList.add('has-terror-sprite');
  t.title=chosen.map(id=>terrorDisplayName(id,form.round,form.rareChoices?.[id])).join(' / ')||'テラーを選択';
  t.setAttribute('aria-label',t.title);
