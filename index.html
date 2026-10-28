@@ -1141,6 +1141,14 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 .selector-search-row[hidden]{display:none!important}
 .selector-search-row input{width:100%;height:32px;min-height:32px;padding:5px 9px!important;background:#050505!important;border:1px solid #666!important;color:#eee!important;font-size:12px}
 #tileGrid>.tile[hidden]{visibility:hidden!important;display:flex!important;pointer-events:none!important;opacity:0!important}
+
+/* VRC log: align player estimate and elapsed seconds as a right-justified pair. */
+.vrc-live-panel .vrc-live-map-row{justify-content:space-between!important;gap:5px!important}
+.vrc-live-panel .vrc-live-map-row .map-badge{flex:0 1 102px!important;min-width:0!important;margin-right:auto!important}
+.vrc-live-panel .vrc-live-people-compact{margin-left:auto!important;justify-content:flex-end!important;gap:6px!important;flex:0 0 auto!important;overflow:visible!important;white-space:nowrap!important}
+.vrc-live-panel .vrc-live-count-ratio,.vrc-live-panel .vrc-live-duration{font-size:10px!important;line-height:20px!important;font-weight:400!important;font-variant-numeric:tabular-nums!important;color:#d6d6d6!important}
+.vrc-live-panel .vrc-live-count-ratio{text-align:right!important}
+.vrc-live-panel .vrc-live-duration{text-align:right!important;min-width:29px!important}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.46">v1.0.46</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
