@@ -721,11 +721,10 @@ html,body,button,input,select,textarea,option{
 .vrc-live-panel{margin:0!important;padding:11px 9px!important;position:sticky;top:12px;max-height:calc(100vh - 25px);min-height:350px;display:flex;flex-direction:column;overflow:hidden}
 .vrc-live-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:5px;padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid #4d3a5a}
 .vrc-live-head strong{font-size:14px}
-#vrcLiveStatus{font-size:10px;color:#b4a5c1;overflow-wrap:anywhere}
-#vrcLiveStatus[data-state="watching"]{color:#a5dfbe}
-#vrcLiveStatus[data-state="error"]{color:#ffc0c8}
-.vrc-live-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
-.vrc-live-controls button{min-width:0;padding:7px 3px;font-size:10px;white-space:nowrap}
+.vrc-live-head #vrcLiveManual{font-size:10px;padding:5px 8px;white-space:nowrap;min-width:0}
+#vrcLiveStatus{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.vrc-live-controls{display:flex;gap:4px}
+.vrc-live-controls button{flex:1;min-width:0;padding:7px 3px;font-size:10px;white-space:nowrap}
 .vrc-live-help,.vrc-live-note{font-size:10px;line-height:1.45;color:#aa9eb5;margin:8px 0 5px}
 .vrc-live-details{font-size:10px;line-height:1.45;color:#ddd0e9;overflow-wrap:anywhere;min-height:27px;max-height:64px;overflow:auto}
 .vrc-live-label{font-size:10px;margin:9px 0 4px;color:#b8acc5}
@@ -1000,9 +999,8 @@ body.terror-id-editor-open{overflow:hidden}
  <section class="panel records-panel"><div class="headline"><div><h2>成果まとめ <span class="pill" id="recordCount">0</span></h2></div><div class="list-tools"><button class="chip" id="summaryEdit">編集</button><button class="chip" id="exportPng">PNG出力</button><div class="utility-row"><button class="danger" id="deleteSession">周回を削除</button><button id="export">JSONを書き出す</button><button id="importButton">JSONを読み込む</button><input accept=".json,application/json" hidden="" id="importFile" type="file"/><button id="vrcLogButton" title="VRChatのoutput_log_*.txtをローカルで解析">VRCログ</button><input id="vrcLogFile" type="file" accept=".txt,text/plain" hidden/></div><input aria-label="記録を検索" class="field" id="search" placeholder="記録を検索" style="max-width:200px"/><button class="chip on" id="listView">テキスト</button><button class="chip" id="iconView">アイコン形式</button></div></div><div class="records" id="records"></div></section>
 </div>
 <aside class="panel vrc-live-panel" id="vrcLivePanel" aria-label="VRChatログ監視">
- <div class="vrc-live-head"><strong>VRCログ</strong><span id="vrcLiveStatus" data-state="idle">未接続</span></div>
- <div class="vrc-live-controls"><button type="button" id="vrcLiveConnect">フォルダ接続</button><button type="button" id="vrcLiveManual">ファイル読込</button></div>
- <div class="vrc-live-help">ログフォルダを接続すると自動検出します。</div>
+ <div class="vrc-live-head"><strong>VRCログ</strong><button type="button" id="vrcLiveManual">ファイル読込</button><span id="vrcLiveStatus" role="status" aria-live="polite" data-state="idle">未接続</span></div>
+ <div class="vrc-live-controls"><button type="button" id="vrcLiveConnect">フォルダ接続</button></div>
  <div class="vrc-live-details" id="vrcLiveDetails">AppData\\LocalLow\\VRChat\\VRChat</div>
  <div class="vrc-live-mapping">
   <button type="button" id="vrcLiveIdEditorOpen" title="テラー画像を見ながらログの数値IDを登録">テラーIDを画像で登録</button>
