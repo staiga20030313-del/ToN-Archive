@@ -91,8 +91,6 @@ function renderScan(){
       (roundIcon(r.round,r.variant)||roundIcon(r.round)):null;
     if(roundArt)roundSprite.append(roundArt);
     else roundSprite.textContent='?';
-    const time=document.createElement('span');time.className='vrc-live-round-time';
-    time.textContent=formatDate(r.start).slice(5);
     // Unverified killer IDs must stay as question marks. Never guess an icon.
     const known=Array.isArray(r.terrors)?r.terrors:[];
     const slots=r.round==='Moon'||r.round==='Other'?0:
@@ -120,21 +118,24 @@ function renderScan(){
       mapText.textContent=r.mapName||'MAP不明';
       mapText.title=mapText.textContent;mapRow.append(mapText);
     }
-    const people=document.createElement('span');people.className='vrc-live-people';
-    for(const [label,value] of [
-      ['生存',r.estimatedSurvivors],['参加',r.estimatedPlayers],['新規',null]
-    ]){
-      const stat=document.createElement('span');stat.className='vrc-live-person';
-      const caption=document.createElement('span');caption.className='vrc-live-person-label';
-      caption.textContent=label;
-      const number=document.createElement('strong');number.className='vrc-live-person-value';
-      number.textContent=value==null?(label==='新規'?'-':'?'):String(value);
-      stat.append(caption,number);people.append(stat);
-    }
-    const info=document.createElement('span');info.className='vrc-live-meta';
-    info.textContent=[duplicate?'取込済み':!r.round?'ラウンド未対応':r.ended?'終了':'進行中',r.status].filter(Boolean).join(' · ');
-    info.title=info.textContent;
-    body.append(headline,time,mapRow,people,info);
+    // Compact readout: survived / players, then new survivors.
+    // These are estimates, not certified counts. A dash means unknown.
+    const people=document.createElement('span');people.className='vrc-live-people-compact';
+    const formatCount=value=>Number.isFinite(value)&&value>=0?String(value):'?';
+    const survived=formatCount(r.estimatedSurvivors);
+    const players=formatCount(r.estimatedPlayers);
+    const newSurvivors=formatCount(r.estimatedNewSurvivors);
+    const mainCount=document.createElement('strong');mainCount.className='vrc-live-count-ratio';
+    mainCount.textContent=survived+'/'+players;
+    const newCount=document.createElement('span');newCount.className='vrc-live-count-new';
+    newCount.textContent=newSurvivors;
+    people.append(mainCount,newCount);
+    people.title='推定 生存 / 参加: '+survived+'/'+players+' · 新規生存: '+newSurvivors;
+    const statusLabel=[duplicate?'取込済み':!r.round?'ラウンド未対応':r.ended?'終了':'進行中',r.status].filter(Boolean).join(' · ');
+    // Keep the status available via tooltip / accessibility; no extra visible line.
+    node.title=statusLabel;
+    mapRow.append(people);
+    body.append(headline,mapRow);
     node.append(body);items.append(node);
   }
   updateSelectedCount();
