@@ -8,13 +8,16 @@ if(!panel)return;
 const status=byId('vrcLiveStatus'),details=byId('vrcLiveDetails'),
       files=byId('vrcLiveFiles'),items=byId('vrcLiveRounds'),
       total=byId('vrcLiveCount'),connect=byId('vrcLiveConnect'),
-      manual=byId('vrcLiveManual'),reload=byId('vrcLiveRefresh');
+      manual=byId('vrcLiveManual'),reload=byId('vrcLiveRefresh'),
+      selectAll=byId('vrcLiveSelectAll'),selectNone=byId('vrcLiveSelectNone'),
+      importButton=byId('vrcLiveImport'),selectedCount=byId('vrcLiveSelectedCount');
 const PREFIX='output_log_';
 const LIMIT=75*1024*1024;
 const PERIOD=12000;
 let directory=null,timer=null,scanning=false,lastSignature='',fileList=[],previousFile='';
 let selectedFile='latest', connected=false;
 let savedStartFolder=null,lastPickedLog=null;
+const selectedKeys=new Set();
 function setStatus(message,mode='idle'){
   status.textContent=message;status.dataset.state=mode;
 }
@@ -32,45 +35,62 @@ function importedKeys(){
   try{return new Set(current().records.map(r=>String(r.sourceLogKey||'').toLowerCase()).filter(Boolean))}
   catch{return new Set()}
 }
+function importable(r,seen){
+  const key=String(r.sourceLogKey||'');
+  return Boolean(key&&r.round&&!seen.has(key.toLowerCase()));
+}
+function updateSelectedCount(){
+  const seen=importedKeys(),visible=[...(vrcLogScan?.rounds||[])].reverse().slice(0,60);
+  const valid=new Set(visible.filter(r=>importable(r,seen)).map(r=>r.sourceLogKey));
+  for(const key of selectedKeys)if(!valid.has(key))selectedKeys.delete(key);
+  selectedCount.textContent=selectedKeys.size+'件選択';
+  importButton.disabled=selectedKeys.size===0;
+  selectAll.disabled=valid.size===0;
+  selectNone.disabled=selectedKeys.size===0;
+}
 function renderScan(){
   const scan=typeof vrcLogScan!=='undefined'?vrcLogScan:null;
   const rounds=scan?.rounds||[],seen=importedKeys();
   total.textContent=rounds.length+'件';
   items.replaceChildren();
+  const visible=[...rounds].reverse().slice(0,60);
+  const available=new Set(visible.filter(r=>importable(r,seen)).map(r=>r.sourceLogKey));
+  for(const key of selectedKeys)if(!available.has(key))selectedKeys.delete(key);
   if(!rounds.length){
     const empty=document.createElement('div');empty.className='vrc-live-empty';
     empty.textContent=scan?'ラウンドは未検出です':'フォルダを接続すると検出結果が表示されます';
-    items.append(empty);return;
+    items.append(empty);updateSelectedCount();return;
   }
-  const sorted=[...rounds].reverse().slice(0,60);
-  for(const r of sorted){
+  for(const r of visible){
     const duplicate=seen.has(String(r.sourceLogKey||'').toLowerCase());
-    const node=document.createElement('button');
-    node.type='button';node.className='vrc-live-round'+(duplicate?' imported':'');
+    const allowed=importable(r,seen),selected=selectedKeys.has(r.sourceLogKey);
+    const node=document.createElement('label');
+    node.className='vrc-live-round'+(duplicate?' imported':'')+(allowed?'':' is-disabled')+(selected?' is-selected':'');
+    const checkbox=document.createElement('input');
+    checkbox.type='checkbox';checkbox.className='vrc-live-check';
+    checkbox.checked=selected;checkbox.disabled=!allowed;
+    checkbox.dataset.sourceKey=String(r.sourceLogKey||'');
+    checkbox.addEventListener('change',()=>{
+      if(checkbox.checked)selectedKeys.add(r.sourceLogKey);
+      else selectedKeys.delete(r.sourceLogKey);
+      node.classList.toggle('is-selected',checkbox.checked);
+      updateSelectedCount();
+    });
+    const body=document.createElement('span');body.className='vrc-live-round-content';
     const headline=document.createElement('span');headline.className='vrc-live-round-head';
     const time=document.createElement('span');time.className='vrc-live-round-time';
     time.textContent=formatDate(r.start).slice(5);
-    const round=document.createElement('strong');round.textContent=[r.round||'未対応',r.variant].filter(Boolean).join(' / ');
+    const round=document.createElement('strong');
+    round.textContent=[r.round||'未対応',r.variant].filter(Boolean).join(' / ');
     headline.append(time,round);
     const map=document.createElement('span');map.className='vrc-live-map';
     map.textContent=r.map?mapName(r.map):r.mapName||'MAP不明';
     const info=document.createElement('span');info.className='vrc-live-meta';
     const people=r.estimatedPlayers==null?'人数 ?':'人数 約'+r.estimatedPlayers;
-    info.textContent=[duplicate?'取込済み':r.ended?'終了':'進行中',people,r.status].filter(Boolean).join(' · ');
-    node.append(headline,map,info);
-    node.title='クリックでラウンドを確認・取込';
-    node.onclick=()=>{
-      if(typeof vrcLogRender!=='function')return;
-      vrcLogRender();
-      const boxes=[...byId('vrcLogRows').querySelectorAll('input[type="checkbox"]')];
-      for(const check of boxes)check.checked=!check.disabled&&check.dataset.sourceKey===r.sourceLogKey;
-      vrcLogUpdateSelection();
-      const dialog=byId('vrcLogDialog');if(!dialog.open)dialog.showModal();
-      const selected=boxes.find(b=>b.dataset.sourceKey===r.sourceLogKey);
-      selected?.closest('label')?.scrollIntoView({block:'nearest'});
-    };
-    items.append(node);
+    info.textContent=[duplicate?'取込済み':!r.round?'未対応ラウンド':r.ended?'終了':'進行中',people,r.status].filter(Boolean).join(' · ');
+    body.append(headline,map,info);node.append(checkbox,body);items.append(node);
   }
+  updateSelectedCount();
 }
 function renderFiles(){
   const previous=files.value||selectedFile;
@@ -84,22 +104,10 @@ function renderFiles(){
   }
   files.value=selectedFile==='latest'||fileList.some(e=>e.name===selectedFile)?selectedFile:'latest';
 }
-function preserveDialogChoice(){
-  const selected=new Set();
-  if(!byId('vrcLogDialog')?.open)return selected;
-  for(const checkbox of byId('vrcLogRows').querySelectorAll('input[type="checkbox"]:checked')){
-    selected.add(checkbox.dataset.sourceKey);
-  }
-  return selected;
-}
 function publish(data,file){
-  const choices=preserveDialogChoice();
+  const previousFile=vrcLogScan?.file||'';
+  if(previousFile&&previousFile!==file.name)selectedKeys.clear();
   vrcLogScan={...data,file:file.name};
-  vrcLogRender();
-  if(choices.size)for(const check of byId('vrcLogRows').querySelectorAll('input[type="checkbox"]')){
-    check.checked=!check.disabled&&choices.has(check.dataset.sourceKey);
-  }
-  vrcLogUpdateSelection();
   renderScan();
 }
 function errorText(error){
@@ -247,13 +255,25 @@ function openLogFilePicker(){
     publish(data,file);
     details.textContent=file.name;
     setStatus(directory?'監視中':'ファイル読込済み',directory?'watching':'idle');
-    const dialog=byId('vrcLogDialog');
-    if(!dialog.open)dialog.showModal();
   }).catch(error=>{
     if(error?.name==='AbortError')return;
     setStatus('ファイル読込エラー','error');details.textContent=errorText(error);
   });
 }
+selectAll.onclick=()=>{
+  const seen=importedKeys(),visible=[...(vrcLogScan?.rounds||[])].reverse().slice(0,60);
+  selectedKeys.clear();
+  for(const r of visible)if(importable(r,seen))selectedKeys.add(r.sourceLogKey);
+  renderScan();
+};
+selectNone.onclick=()=>{selectedKeys.clear();renderScan()};
+importButton.onclick=()=>{
+  if(!selectedKeys.size||!window.TON_VRC_IMPORT)return;
+  const requested=new Set(selectedKeys);
+  const added=window.TON_VRC_IMPORT.importSelected(requested);
+  if(added>0)selectedKeys.clear();
+  renderScan();
+};
 manual.onclick=openLogFilePicker;
 // Keep the existing results-panel VRCログ button on the same picker behavior.
 byId('vrcLogButton').onclick=openLogFilePicker;
