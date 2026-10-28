@@ -172,7 +172,7 @@ function renderScan(){
     const roundSprite=document.createElement('span');roundSprite.className='vrc-live-round-icon';
     // Reuse the archive's actual 32x32 atlas sprite, not a scaled screenshot.
     const roundArt=typeof roundIcon==='function'?
-      (roundIcon(r.round,r.variant)||roundIcon(r.round)):null;
+      (roundIcon(r.round,r.round==='Sabotage'?(r.variant||'Sabotage 1'):r.variant)||roundIcon(r.round)):null;
     if(roundArt)roundSprite.append(roundArt);
     else roundSprite.textContent='?';
     // Unverified killer IDs must stay as question marks. Never guess an icon.
