@@ -752,8 +752,20 @@ html,body,button,input,select,textarea,option{
  .archive-workspace{display:flex!important;flex-direction:column!important}
  .archive-workspace>.vrc-live-panel{width:100%;position:static;max-height:420px;min-height:230px}
 }
+/* Select and import VRChat rounds in the right sidebar without opening a dialog. */
+.vrc-live-round{flex-direction:row!important;align-items:flex-start;gap:7px;cursor:pointer}
+.vrc-live-round-content{display:flex;flex:1;flex-direction:column;gap:3px;min-width:0}
+.vrc-live-check{flex:0 0 15px;margin:2px 0 0;width:15px;height:15px;accent-color:#b28bdd;cursor:pointer}
+.vrc-live-round.is-selected{border-color:#c59cef;background:#382849}
+.vrc-live-round.is-disabled{opacity:.52;cursor:default}
+.vrc-live-round.is-disabled .vrc-live-check{cursor:default}
+.vrc-live-select-actions{display:flex;gap:5px;align-items:center;flex-wrap:wrap;padding:7px 0 5px;border-top:1px solid #493a54}
+.vrc-live-select-actions button{font-size:10px;padding:5px 6px}
+.vrc-live-select-actions span{margin-left:auto;font-size:10px;color:#cdbfd8}
+.vrc-live-import{width:100%;min-height:32px;padding:6px 4px!important;font-size:11px}
+.vrc-live-note{border-top:0;margin:5px 0 0}
 </style></head><body><main class="shell">
-<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.7">v1.0.7</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
+<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.8">v1.0.8</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
@@ -784,17 +796,13 @@ html,body,button,input,select,textarea,option{
  <select id="vrcLiveFiles" class="field vrc-live-select" aria-label="監視するログファイル"><option value="latest">最新ログ（自動）</option></select>
  <div class="vrc-live-section"><strong>検出ラウンド <span id="vrcLiveCount">0件</span></strong><button type="button" id="vrcLiveRefresh">更新</button></div>
  <div id="vrcLiveRounds" class="vrc-live-rounds" aria-live="polite"><div class="vrc-live-empty">ログを接続すると検出結果が表示されます</div></div>
- <div class="vrc-live-note">候補を選ぶと取込画面が開きます。人数は推定値です。</div>
+ <div class="vrc-live-select-actions"><button type="button" id="vrcLiveSelectAll">全選択</button><button type="button" id="vrcLiveSelectNone">解除</button><span id="vrcLiveSelectedCount">0件選択</span></div>
+ <button type="button" class="primary vrc-live-import" id="vrcLiveImport" disabled>選択した成果を追加</button>
+ <div class="vrc-live-note">チェックしたラウンドを成果に追加します。人数は推定値です。</div>
 </aside>
 </div>
 </main>
-<dialog id="vrcLogDialog" aria-labelledby="vrcLogTitle">
-  <div class="vrc-log-head"><h2 id="vrcLogTitle">VRCログから成果を取り込む</h2><button id="vrcLogClose" type="button">閉じる</button></div>
-  <p class="vrc-log-help">ログはブラウザ内で解析します。推定人数は確定値ではありません。未対応のテラーIDやMAPは空欄のまま取り込み、後から編集できます。</p>
-  <div class="vrc-log-toolbar"><span id="vrcLogSummary"></span><button id="vrcLogSelectAll" type="button">全選択</button><button id="vrcLogSelectNone" type="button">選択解除</button></div>
-  <div id="vrcLogRows" class="vrc-log-rows"></div>
-  <div class="vrc-log-actions"><span id="vrcLogSelectedCount">0件選択</span><button id="vrcLogImport" class="primary" type="button" disabled>選択した成果を反映</button></div>
-</dialog>
+
 <div class="status" id="toast" role="status"></div>
 <script src="./assets/terror_config.js"></script><script src="./assets/map_config.js"></script>
 <script src="./assets/vrc_log_import.js"></script>
@@ -2020,36 +2028,25 @@ function vrcLogRecord(round){
    logRoundSeconds:round.durationSeconds,createdAt:round.start
  };
 }
-function vrcLogRender(){
- const rows=$('vrcLogRows');rows.replaceChildren();
+/* Import the checked sidebar rounds into the active session, preserving deduplication. */
+function vrcLogImportSelected(sourceKeys){
+ if(!vrcLogScan||!sourceKeys||!sourceKeys.size)return 0;
  const existing=new Set(current().records.map(r=>String(r.sourceLogKey||'').toLowerCase()).filter(Boolean));
- const candidates=vrcLogScan?.rounds||[];
- $('vrcLogSummary').textContent=(vrcLogScan?.file||'')+' · '+candidates.length+'ラウンド';
- for(const r of candidates){
-   const duplicate=existing.has(r.sourceLogKey.toLowerCase()),unsupported=!r.round;
-   const disabled=duplicate||unsupported;
-   const label=dom('label','vrc-log-row'+(disabled?' is-disabled':''));
-   const check=dom('input');check.type='checkbox';check.disabled=disabled;check.dataset.sourceKey=r.sourceLogKey;
-   check.addEventListener('change',vrcLogUpdateSelection);
-   const details=dom('span');
-   const title=dom('strong','',[r.start.replace('T',' '),r.round||'未対応ラウンド',r.variant,r.map?mapName(r.map):(r.mapName||'MAP不明')].filter(Boolean).join(' / '));
-   const status=duplicate?'取込済み':unsupported?'ラウンド未対応':r.status;
-   const counts='推定人数 '+(r.estimatedSurvivors??'?')+'/'+(r.estimatedPlayers??'?');
-   const terrors=r.terrors.length?r.terrors.join(', '):r.unmappedKillerIds.length?'未対応テラーID: '+r.unmappedKillerIds.join(', '):'テラー未確定';
-   const meta=dom('small','',status+' · '+counts+' · '+terrors+
-     (r.durationSeconds==null?'':' · '+r.durationSeconds+'秒')+
-     (!r.map?' · MAP要確認':''));
-   details.append(title,meta);label.append(check,details);rows.append(label);
+ let added=0;
+ for(const round of vrcLogScan.rounds){
+   const key=String(round.sourceLogKey||'');
+   if(!key||!sourceKeys.has(key)||!round.round||existing.has(key.toLowerCase()))continue;
+   current().records.push(vrcLogRecord(round));
+   existing.add(key.toLowerCase());added++;
  }
- vrcLogUpdateSelection();
+ if(added){
+   persist();renderRecords();
+   notify(added+'件のログ成果を追加しました（人数は推定値）');
+ }
  window.TON_VRC_PANEL?.renderScan();
+ return added;
 }
-function vrcLogUpdateSelection(){
- const checks=[...$('vrcLogRows').querySelectorAll('input[type="checkbox"]')];
- const count=checks.filter(c=>c.checked&&!c.disabled).length;
- $('vrcLogSelectedCount').textContent=count+'件選択';
- $('vrcLogImport').disabled=count===0;
-}
+window.TON_VRC_IMPORT={importSelected:vrcLogImportSelected};
 $('vrcLogButton').onclick=()=>{
  if(!window.TON_VRC_LOG){notify('ログ解析機能を読み込めませんでした');return}
  $('vrcLogFile').click();
@@ -2060,37 +2057,10 @@ $('vrcLogFile').onchange=async e=>{
    if(file.size>50*1024*1024)throw Error('ログが50MBを超えています');
    const data=window.TON_VRC_LOG.analyze(await file.text(),file.name,MAP_DATA);
    vrcLogScan={...data,file:file.name};
-   vrcLogRender();
-   if(!$('vrcLogDialog').open)$('vrcLogDialog').showModal();
+   window.TON_VRC_PANEL?.renderScan();
    if(!data.rounds.length)notify('ラウンドを検出できませんでした');
  }catch(error){notify('ログ解析失敗: '+error.message)}
  finally{e.target.value=''}
-};
-$('vrcLogClose').onclick=()=>$('vrcLogDialog').close();
-$('vrcLogSelectAll').onclick=()=>{
- for(const box of $('vrcLogRows').querySelectorAll('input[type="checkbox"]'))if(!box.disabled)box.checked=true;
- vrcLogUpdateSelection();
-};
-$('vrcLogSelectNone').onclick=()=>{
- for(const box of $('vrcLogRows').querySelectorAll('input[type="checkbox"]'))box.checked=false;
- vrcLogUpdateSelection();
-};
-$('vrcLogImport').onclick=()=>{
- if(!vrcLogScan)return;
- const selected=new Set([...$('vrcLogRows').querySelectorAll('input[type="checkbox"]')]
-   .filter(c=>c.checked&&!c.disabled).map(c=>c.dataset.sourceKey));
- if(!selected.size)return;
- const existing=new Set(current().records.map(r=>String(r.sourceLogKey||'').toLowerCase()).filter(Boolean));
- let added=0;
- for(const round of vrcLogScan.rounds){
-   if(!selected.has(round.sourceLogKey)||!round.round||existing.has(round.sourceLogKey.toLowerCase()))continue;
-   current().records.push(vrcLogRecord(round));existing.add(round.sourceLogKey.toLowerCase());added++;
- }
- if(added){
-   persist();renderRecords();
-   notify(added+'件のログ成果を追加しました（人数は推定値）');
- }
- vrcLogRender();
 };
 
 updateForm();renderSessions();
