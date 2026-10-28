@@ -327,6 +327,19 @@ reload.onclick=()=>{if(directory)void poll(true);else if(vrcLogScan)renderScan()
 files.onchange=()=>{selectedFile=files.value;lastSignature='';if(directory)void poll(true)};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&directory)void poll()});
 window.TON_VRC_PANEL={renderScan,loadScan:publish};
+// Canvas map labels and terror colors must refresh after their atlases/fonts load.
+for(const atlas of [
+  typeof mapAtlasImage==='undefined'?null:mapAtlasImage,
+  typeof terrorSheet==='undefined'?null:terrorSheet,
+  typeof unboundSheet==='undefined'?null:unboundSheet
+]){
+  if(atlas&&typeof atlas.addEventListener==='function'){
+    atlas.addEventListener('load',()=>{if(vrcLogScan?.rounds?.length)renderScan()});
+  }
+}
+if(document.fonts?.ready){
+  document.fonts.ready.then(()=>{if(vrcLogScan?.rounds?.length)renderScan()}).catch(()=>{});
+}
 renderScan();
 if(typeof window.showDirectoryPicker==='function'){
   void (async()=>{
