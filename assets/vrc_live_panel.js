@@ -10,7 +10,9 @@ const status=byId('vrcLiveStatus'),details=byId('vrcLiveDetails'),
       total=byId('vrcLiveCount'),connect=byId('vrcLiveConnect'),
       manual=byId('vrcLiveManual'),reload=byId('vrcLiveRefresh'),
       selectAll=byId('vrcLiveSelectAll'),selectNone=byId('vrcLiveSelectNone'),
-      importButton=byId('vrcLiveImport'),selectedCount=byId('vrcLiveSelectedCount');
+      importButton=byId('vrcLiveImport'),selectedCount=byId('vrcLiveSelectedCount'),
+      mappingButton=byId('vrcLiveMappingButton'),mappingFile=byId('vrcLiveMappingFile'),
+      mappingStatus=byId('vrcLiveMappingStatus');
 const PREFIX='output_log_';
 const LIMIT=75*1024*1024;
 const PERIOD=12000;
@@ -92,13 +94,13 @@ function renderScan(){
     if(roundArt)roundSprite.append(roundArt);
     else roundSprite.textContent='?';
     // Unverified killer IDs must stay as question marks. Never guess an icon.
-    const known=Array.isArray(r.terrors)?r.terrors:[];
-    const slots=r.round==='Moon'||r.round==='Other'?0:
+    const known=Array.isArray(r.terrorSlots)?r.terrorSlots:Array.isArray(r.terrors)?r.terrors:[];
+    const slots=r.round==='Moon'||r.round==='Other'&&!['Other 3','Other 4'].includes(r.variant)?0:
       r.round==='Midnight'?3:r.round==='Bloodbath'?
       (r.variant==='DT'?2:r.variant==='EX'?1:3):1;
     const terrorGroup=document.createElement('span');terrorGroup.className='vrc-live-terror-icons';
     for(let i=0;i<slots;i++){
-      const id=known[r.round==='Bloodbath'&&r.variant==='EX'?0:i];
+      const id=known[i];
       const art=id&&typeof terrorIcon==='function'?
         terrorIcon(id,r.round,r.variant):typeof questionIcon==='function'?
         questionIcon(r.round,r.variant):null;
@@ -319,6 +321,34 @@ importButton.onclick=()=>{
   if(added>0)selectedKeys.clear();
   renderScan();
 };
+function showMappingStatus(){
+  const info=window.TON_VRC_LOG?.mappingInfo();
+  const n=info?.count||0;
+  mappingStatus.textContent=n?'ID対応: '+n+'件登録':'ID対応: 未登録';
+  if(info?.error)mappingStatus.title=info.error;
+  else mappingStatus.title=n?'旧ツールのID対応表をこのブラウザに保存済み':'旧ツールで設定した数値ログIDのJSONを選択してください';
+}
+mappingButton.onclick=()=>mappingFile.click();
+mappingFile.onchange=async event=>{
+  const file=event.target.files?.[0];
+  if(!file)return;
+  try{
+    if(file.size>2*1024*1024)throw Error('対応表が2MBを超えています');
+    const data=JSON.parse((await file.text()).replace(/^\uFEFF/,''));
+    const info=window.TON_VRC_LOG.importMappings(data);
+    if(typeof vrcLogScan!=='undefined'&&vrcLogScan)
+      window.TON_VRC_LOG.applyMappingsToScan(vrcLogScan);
+    showMappingStatus();
+    renderScan();
+    mappingStatus.textContent=info.count+'件のID対応を読込済み';
+  }catch(error){
+    // A failed import must not overwrite the previously saved mapping.
+    showMappingStatus();
+    mappingStatus.textContent='読込失敗: '+errorText(error);
+    mappingStatus.title='旧ツールの terror_log_mappings.json を選択してください';
+  }finally{event.target.value=''}
+};
+showMappingStatus();
 manual.onclick=openLogFilePicker;
 // Keep the existing results-panel VRCログ button on the same picker behavior.
 byId('vrcLogButton').onclick=openLogFilePicker;
