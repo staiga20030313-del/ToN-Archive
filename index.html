@@ -1008,6 +1008,33 @@ body.terror-id-editor-open{overflow:hidden}
   height:28px!important;min-height:28px!important;flex:0 0 28px!important;
 }
 .vrc-live-panel .vrc-live-map-row{gap:5px!important}
+
+/* VRChat log sorting and native-inspired round icon filtering. */
+.vrc-log-view-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;min-width:0;margin:5px 0 7px}
+.vrc-log-view-controls button{font-size:10px;line-height:1.25;white-space:nowrap;min-width:0;padding:7px 3px}
+.vrc-log-view-controls button.on{background:#644578;border-color:#be91db;color:#fff}
+.vrc-round-filter-popover[hidden]{display:none!important}
+.vrc-round-filter-popover{
+ position:fixed;z-index:500;box-sizing:border-box;
+ width:min(535px,calc(100vw - 20px));max-height:min(280px,calc(100vh - 20px));
+ overflow:auto;padding:11px;background:#241d31;border:1px solid #806396;
+ border-radius:6px;box-shadow:0 15px 40px #000c
+}
+.vrc-round-filter-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 9px;font-size:12px}
+.vrc-round-filter-head button{font-size:13px;padding:2px 8px}
+.vrc-round-filter-grid,.vrc-round-filter-variants{display:flex;flex-wrap:wrap;align-content:start;gap:4px;min-height:0}
+.vrc-round-filter-variants{border-top:1px solid #483955;margin-top:10px;padding-top:8px}
+.vrc-round-filter-variants:empty{display:none}
+.vrc-round-filter-tile{
+ display:flex!important;position:relative;align-items:center!important;justify-content:center!important;
+ flex:0 0 36px;width:36px;height:39px;min-width:36px;min-height:39px;
+ padding:3px 2px!important;border:1px solid transparent!important;border-radius:2px;
+ background:transparent!important;box-shadow:none!important;opacity:.36;
+}
+.vrc-round-filter-tile .round-sprite{width:32px!important;height:32px!important;flex:0 0 32px}
+.vrc-round-filter-tile.on{opacity:1;border-color:#9871b3!important;background:#35243f!important}
+.vrc-round-filter-tile:hover{opacity:1!important;filter:brightness(1.15)!important}
+.vrc-round-filter-tile:focus-visible{outline:2px solid #d1a6f1;outline-offset:1px}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.34">v1.0.34</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
@@ -1041,8 +1068,10 @@ body.terror-id-editor-open{overflow:hidden}
   <input id="vrcLiveMappingFile" type="file" accept=".json,application/json" hidden>
   <span id="vrcLiveMappingStatus" aria-live="polite">ID対応: 未登録</span>
  </div>
- <label for="vrcLiveFiles" class="vrc-live-label">ログファイル</label>
- <select id="vrcLiveFiles" class="field vrc-live-select" aria-label="監視するログファイル"><option value="latest">最新ログ（自動）</option></select>
+ <div class="vrc-log-view-controls" role="group" aria-label="検出ラウンドの表示設定">
+  <button type="button" id="vrcLiveSort" aria-pressed="false" title="クリックで最新順・生存優先を切替">最新順</button>
+  <button type="button" id="vrcLiveRoundFilterToggle" aria-expanded="false" aria-controls="vrcLiveRoundFilter">ラウンド選択</button>
+ </div>
  <div class="vrc-live-section"><strong>検出ラウンド <span id="vrcLiveCount">0件</span></strong><button type="button" id="vrcLiveRefresh">更新</button></div>
  <div id="vrcLiveRounds" class="vrc-live-rounds" aria-live="polite"><div class="vrc-live-empty">ログを接続すると検出結果が表示されます</div></div>
  <div class="vrc-live-select-actions"><button type="button" id="vrcLiveSelectAll">全選択</button><button type="button" id="vrcLiveSelectNone">解除</button><span id="vrcLiveSelectedCount">0件選択</span></div>
@@ -1051,6 +1080,11 @@ body.terror-id-editor-open{overflow:hidden}
 </aside>
 </div>
 </main>
+<div id="vrcLiveRoundFilter" class="vrc-round-filter-popover" hidden role="group" aria-label="ログに表示するラウンド">
+ <div class="vrc-round-filter-head"><strong>ラウンド表示切替</strong><button type="button" id="vrcLiveRoundFilterClose" aria-label="閉じる">×</button></div>
+ <div class="vrc-round-filter-grid" id="vrcLiveRoundFilterGrid"></div>
+ <div class="vrc-round-filter-variants" id="vrcLiveRoundFilterVariants"></div>
+</div>
 
 <div id="terrorIdEditor" class="terror-id-editor" hidden role="dialog" aria-modal="true" aria-label="テラーのログID編集">
  <div class="terror-id-dialog">
