@@ -65,19 +65,33 @@ function normalizeMappings(data){
  if(!entries.length)throw Error('登録済みログIDがありません。元ツールの設定ファイルを確認してください');
  return {entries,byScope};
 }
-let activeMapping=null,mappingWarning='';
+let activeMapping=null,mappingWarning='',mappingSource='';
+/* Published, author-reviewed mapping wins over per-browser imports.
+   When no reviewed mappings are bundled, retain existing local imports. */
 try{
- const data=localStorage.getItem(MAPPING_STORAGE);
- if(data)activeMapping=normalizeMappings(JSON.parse(data));
-}catch(e){mappingWarning=e?.message||String(e)}
+ const embedded=window.TON_BUILTIN_TERROR_MAPPING;
+ if(embedded?.Entries?.length){
+   activeMapping=normalizeMappings(embedded);
+   mappingSource='builtin';
+ }
+}catch(e){mappingWarning='組込対応表を読み込めません: '+(e?.message||String(e))}
+if(!activeMapping){
+ try{
+   const data=localStorage.getItem(MAPPING_STORAGE);
+   if(data){
+     activeMapping=normalizeMappings(JSON.parse(data));
+     mappingSource='local';
+   }
+ }catch(e){mappingWarning=e?.message||String(e)}
+}
 function mappingInfo(){
- return {count:activeMapping?.entries.length||0,error:mappingWarning};
+ return {count:activeMapping?.entries.length||0,error:mappingWarning,source:mappingSource};
 }
 function importMappings(data){
  const validated=normalizeMappings(data);
- // Only commit after full validation; never erase previously saved IDs on error.
+ // Never erase existing IDs on a rejected import or storage failure.
  localStorage.setItem(MAPPING_STORAGE,JSON.stringify({Entries:validated.entries}));
- activeMapping=validated;mappingWarning='';
+ activeMapping=validated;mappingWarning='';mappingSource='local';
  return mappingInfo();
 }
 function lookupTerror(logId,round,variant,position,alternate){
