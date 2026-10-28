@@ -68,13 +68,12 @@ function makeRoundTile(round,variant='',enabled=true){
 function renderRoundFilter(){
   roundFilterGrid.replaceChildren();roundFilterVariants.replaceChildren();
   for(const round of roundList){
-    const keys=roundKeys(round);
-    const on=keys.some(key=>!disabledRounds.has(key));
+    const subrounds=variantList[round]||[];
+    const on=subrounds.length?subrounds.some(v=>!disabledRounds.has(round+'/'+v)):!disabledRounds.has(round);
     const tile=makeRoundTile(round,'',on);
     tile.onclick=()=>{
-      const allOn=keys.every(key=>!disabledRounds.has(key));
-      for(const key of keys){if(allOn)disabledRounds.add(key);else disabledRounds.delete(key)}
-      expandedRound=(variantList[round]||[]).length?round:'';
+      if(subrounds.length){expandedRound=expandedRound===round?'':round;}
+      else{if(on)disabledRounds.add(round);else disabledRounds.delete(round);expandedRound='';}
       renderRoundFilter();renderScan();
     };
     roundFilterGrid.append(tile);
