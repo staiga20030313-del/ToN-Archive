@@ -1065,9 +1065,22 @@ body.terror-id-editor-open{overflow:hidden}
   gap:4px!important;font-size:10px!important;line-height:18px!important;
 }
 .vrc-live-panel .vrc-live-duration{font-size:9px!important;line-height:18px!important}
+
+/* Reference sketch: preview spans input + results, log stays at right. */
+.archive-workspace{grid-template-areas:"preview preview log" "entry results log"!important;grid-template-rows:auto 1fr;align-items:start}
+.archive-workspace>.preview-panel{grid-area:preview;min-width:0;min-height:72px!important;padding:8px 11px!important}
+.archive-workspace>.entry-panel{grid-area:entry}
+.archive-workspace>.results-workspace{grid-area:results}
+.archive-workspace>.vrc-live-panel{grid-area:log}
+.preview-panel .preview-topline{margin-bottom:4px!important}
+.preview-panel .preview-tools{display:flex;gap:5px;margin-left:auto}
+.preview-panel .preview-tools button{font-size:11px;padding:4px 8px}
+.preview-panel .preview-content{min-height:36px}
+@media(max-width:850px){.archive-workspace{grid-template-areas:"preview" "entry" "results" "log"!important;grid-template-columns:minmax(0,1fr)!important}}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.42">v1.0.42</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
+ <section class="panel preview-panel" aria-label="追加予定の成果"><div class="preview-topline"><span class="preview-heading" id="previewHeading">追加予定の成果</span><span class="preview-hint" id="previewHint">左の項目から入力</span><div class="preview-tools"><button class="chip" id="summaryEdit">編集</button><button class="chip" id="exportPng">PNG出力</button></div></div><div class="preview-content"><div class="preview-display" id="previewDisplay" aria-live="polite"></div></div></section>
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
  <div class="entry-icon-row">
@@ -1085,8 +1098,8 @@ body.terror-id-editor-open{overflow:hidden}
 <div class="selector" id="selector"><div class="choice-title"><div><b id="selectorHeading">ラウンド選択</b><div class="tiny" id="selectorTip">アイコンをクリックして選択</div></div><button class="mini" id="closeSelector">閉じる ×</button></div><div id="terrorNamePreview" aria-live="polite"></div><div class="selectorbar" id="selectorTabs"></div><div class="tilegrid" id="tileGrid"></div></div>
 </section>
 <div class="results-workspace">
- <section class="panel preview-panel" aria-label="追加予定の成果"><div class="preview-topline"><span class="preview-heading" id="previewHeading">追加予定の成果</span><span class="preview-hint" id="previewHint">左の項目から入力</span></div><div class="preview-content"><div class="preview-display" id="previewDisplay" aria-live="polite"></div></div></section>
- <section class="panel records-panel"><div class="headline"><div><h2>成果まとめ <span class="pill" id="recordCount">0</span></h2></div><div class="list-tools"><button class="chip" id="summaryEdit">編集</button><button class="chip" id="exportPng">PNG出力</button><div class="utility-row"><button class="danger" id="deleteSession">周回を削除</button><button id="export">JSONを書き出す</button><button id="importButton">JSONを読み込む</button><input accept=".json,application/json" hidden="" id="importFile" type="file"/><button id="vrcLogButton" title="VRChatのoutput_log_*.txtをローカルで解析">VRCログ</button><input id="vrcLogFile" type="file" accept=".txt,text/plain" hidden/></div><input aria-label="記録を検索" class="field" id="search" placeholder="記録を検索" style="max-width:200px"/><button class="chip on" id="listView">テキスト</button><button class="chip" id="iconView">アイコン形式</button></div></div><div class="records" id="records"></div></section>
+
+ <section class="panel records-panel"><div class="headline"><div><h2>成果まとめ <span class="pill" id="recordCount">0</span></h2></div><div class="list-tools"><div class="utility-row"><button class="danger" id="deleteSession">周回を削除</button><button id="export">JSONを書き出す</button><button id="importButton">JSONを読み込む</button><input accept=".json,application/json" hidden="" id="importFile" type="file"/><button id="vrcLogButton" title="VRChatのoutput_log_*.txtをローカルで解析">VRCログ</button><input id="vrcLogFile" type="file" accept=".txt,text/plain" hidden/></div><input aria-label="記録を検索" class="field" id="search" placeholder="記録を検索" style="max-width:200px"/><button class="chip on" id="listView">テキスト</button><button class="chip" id="iconView">アイコン形式</button></div></div><div class="records" id="records"></div></section>
 </div>
 <aside class="panel vrc-live-panel" id="vrcLivePanel" aria-label="VRChatログ監視">
  <div class="vrc-live-head"><strong>VRCログ</strong><button type="button" id="vrcLiveManual">ファイル読込</button><span id="vrcLiveStatus" role="status" aria-live="polite" data-state="idle">未接続</span></div>
