@@ -95,7 +95,7 @@ function renderScan(){
     const known=Array.isArray(r.terrors)?r.terrors:[];
     const slots=r.round==='Moon'||r.round==='Other'?0:
       r.round==='Midnight'?3:r.round==='Bloodbath'?
-      (r.variant==='DT'?2:3):1;
+      (r.variant==='DT'?2:r.variant==='EX'?1:3):1;
     const terrorGroup=document.createElement('span');terrorGroup.className='vrc-live-terror-icons';
     for(let i=0;i<slots;i++){
       const id=known[r.round==='Bloodbath'&&r.variant==='EX'?0:i];
@@ -124,13 +124,10 @@ function renderScan(){
     const formatCount=value=>Number.isFinite(value)&&value>=0?String(value):'?';
     const survived=formatCount(r.estimatedSurvivors);
     const players=formatCount(r.estimatedPlayers);
-    const newSurvivors=Number.isFinite(r.estimatedNewSurvivors)&&r.estimatedNewSurvivors>=0?String(r.estimatedNewSurvivors):'-';
-    const mainCount=document.createElement('strong');mainCount.className='vrc-live-count-ratio';
+     const mainCount=document.createElement('strong');mainCount.className='vrc-live-count-ratio';
     mainCount.textContent=survived+'/'+players;
-    const newCount=document.createElement('span');newCount.className='vrc-live-count-new';
-    newCount.textContent=newSurvivors;
-    people.append(mainCount,newCount);
-    people.title='推定 生存 / 参加: '+survived+'/'+players+' · 新規生存: '+newSurvivors;
+    people.append(mainCount);
+    people.title='推定 生存 / 参加: '+survived+'/'+players;
     const statusLabel=[duplicate?'取込済み':!r.round?'ラウンド未対応':r.ended?'終了':'進行中',r.status].filter(Boolean).join(' · ');
     // Keep the status available via tooltip / accessibility; no extra visible line.
     node.title=statusLabel;
