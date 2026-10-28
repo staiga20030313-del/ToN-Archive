@@ -324,9 +324,15 @@ importButton.onclick=()=>{
 function showMappingStatus(){
   const info=window.TON_VRC_LOG?.mappingInfo();
   const n=info?.count||0;
-  mappingStatus.textContent=n?'ID対応: '+n+'件登録':'ID対応: 未登録';
+  const builtin=info?.source==='builtin';
+  mappingButton.hidden=n>0; // Import remains available only when mappings are missing.
+  mappingStatus.textContent=n?
+    (builtin?'ID対応: 本体組込 '+n+'件':'ID対応: '+n+'件を自動適用'):
+    'ID対応: 未登録';
   if(info?.error)mappingStatus.title=info.error;
-  else mappingStatus.title=n?'旧ツールのID対応表をこのブラウザに保存済み':'旧ツールで設定した数値ログIDのJSONを選択してください';
+  else mappingStatus.title=n?
+    (builtin?'サイトに組み込み済み。手動読込は不要です':'このブラウザに保存済み。毎回読み込む必要はありません'):
+    '旧ツールで設定した数値ログIDのJSONを一度だけ選択してください';
 }
 mappingButton.onclick=()=>mappingFile.click();
 mappingFile.onchange=async event=>{
