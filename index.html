@@ -1077,6 +1077,9 @@ body.terror-id-editor-open{overflow:hidden}
 .preview-panel .preview-tools button{font-size:11px;padding:4px 8px}
 .preview-panel .preview-content{min-height:36px}
 @media(max-width:850px){.archive-workspace{grid-template-areas:"preview" "entry" "results" "log"!important;grid-template-columns:minmax(0,1fr)!important}}
+
+/* Keep summary header minimal; retained hidden controls preserve existing JS bindings. */
+.records-panel .headline .list-tools{display:none!important}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.42">v1.0.42</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
