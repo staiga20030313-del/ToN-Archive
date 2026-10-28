@@ -361,7 +361,7 @@ byId('vrcLogButton').onclick=openLogFilePicker;
 reload.onclick=()=>{if(directory)void poll(true);else if(vrcLogScan)renderScan()};
 files.onchange=()=>{selectedFile=files.value;lastSignature='';if(directory)void poll(true)};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&directory)void poll()});
-window.TON_VRC_PANEL={renderScan,loadScan:publish};
+window.TON_VRC_PANEL={renderScan,loadScan:publish,refreshMappingStatus:showMappingStatus};
 // Canvas map labels and terror colors must refresh after their atlases/fonts load.
 for(const atlas of [
   typeof mapAtlasImage==='undefined'?null:mapAtlasImage,
