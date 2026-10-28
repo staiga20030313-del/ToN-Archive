@@ -14,6 +14,7 @@ const LIMIT=75*1024*1024;
 const PERIOD=12000;
 let directory=null,timer=null,scanning=false,lastSignature='',fileList=[],previousFile='';
 let selectedFile='latest', connected=false;
+let savedStartFolder=null,lastPickedLog=null;
 function setStatus(message,mode='idle'){
   status.textContent=message;status.dataset.state=mode;
 }
@@ -205,7 +206,7 @@ connect.onclick=async()=>{
       // Allow any folder that contains VRChat log files, but report what was selected.
       details.textContent='選択フォルダ: '+picked.name;
     }
-    directory=picked;
+    directory=picked;savedStartFolder=picked;
     selectedFile='latest';lastSignature='';
     void saveHandle(picked);
     start();
@@ -215,7 +216,47 @@ connect.onclick=async()=>{
     }
   }
 };
-manual.onclick=()=>byId('vrcLogButton').click();
+function openLogFilePicker(){
+  if(!window.TON_VRC_LOG){
+    setStatus('ログ解析機能が未読込です','error');return;
+  }
+  // Browsers without the File System Access picker retain the original file input.
+  if(typeof window.showOpenFilePicker!=='function'){
+    byId('vrcLogFile').click();return;
+  }
+  const options={
+    id:'ton-vrc-log-file',multiple:false,
+    types:[{description:'VRChatログ (*.txt)',accept:{'text/plain':['.txt']}}]
+  };
+  // Start in the previously connected VRChat directory when available.
+  // Otherwise the stable ID remembers the previous file-picker location.
+  if(directory||savedStartFolder||lastPickedLog){
+    options.startIn=directory||savedStartFolder||lastPickedLog;
+  }
+  // Call immediately from the click handler; awaiting first loses user activation.
+  let request;
+  try{request=window.showOpenFilePicker(options)}
+  catch(error){setStatus('ファイル選択エラー','error');details.textContent=errorText(error);return}
+  void request.then(async handles=>{
+    const handle=handles?.[0];if(!handle)return;
+    const file=await handle.getFile();
+    if(!/^output_log_.*\\.txt$/i.test(file.name))throw Error('output_log_*.txt を選択してください');
+    if(file.size>50*1024*1024)throw Error('ログが50MBを超えています');
+    const data=window.TON_VRC_LOG.analyze(await file.text(),file.name,MAP_DATA);
+    lastPickedLog=handle;
+    publish(data,file);
+    details.textContent=file.name;
+    setStatus(directory?'監視中':'ファイル読込済み',directory?'watching':'idle');
+    const dialog=byId('vrcLogDialog');
+    if(!dialog.open)dialog.showModal();
+  }).catch(error=>{
+    if(error?.name==='AbortError')return;
+    setStatus('ファイル読込エラー','error');details.textContent=errorText(error);
+  });
+}
+manual.onclick=openLogFilePicker;
+// Keep the existing results-panel VRCログ button on the same picker behavior.
+byId('vrcLogButton').onclick=openLogFilePicker;
 reload.onclick=()=>{if(directory)void poll(true);else if(vrcLogScan)renderScan()};
 files.onchange=()=>{selectedFile=files.value;lastSignature='';if(directory)void poll(true)};
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&directory)void poll()});
@@ -224,6 +265,7 @@ renderScan();
 if(typeof window.showDirectoryPicker==='function'){
   void (async()=>{
     const handle=await restoreHandle();if(!handle)return;
+    savedStartFolder=handle;
     try{
       const permission=typeof handle.queryPermission==='function'
         ?await handle.queryPermission({mode:'read'}):'prompt';
