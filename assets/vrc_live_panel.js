@@ -124,7 +124,7 @@ function renderScan(){
     const formatCount=value=>Number.isFinite(value)&&value>=0?String(value):'?';
     const survived=formatCount(r.estimatedSurvivors);
     const players=formatCount(r.estimatedPlayers);
-    const newSurvivors=formatCount(r.estimatedNewSurvivors);
+    const newSurvivors=Number.isFinite(r.estimatedNewSurvivors)&&r.estimatedNewSurvivors>=0?String(r.estimatedNewSurvivors):'-';
     const mainCount=document.createElement('strong');mainCount.className='vrc-live-count-ratio';
     mainCount.textContent=survived+'/'+players;
     const newCount=document.createElement('span');newCount.className='vrc-live-count-new';
