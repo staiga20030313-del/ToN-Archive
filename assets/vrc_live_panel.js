@@ -64,18 +64,25 @@ function renderScan(){
   for(const r of visible){
     const duplicate=seen.has(String(r.sourceLogKey||'').toLowerCase());
     const allowed=importable(r,seen),selected=selectedKeys.has(r.sourceLogKey);
-    const node=document.createElement('label');
+    // The card itself is a toggle. A selected card has a highlighted background.
+    const node=document.createElement('button');
+    node.type='button';
     node.className='vrc-live-round'+(duplicate?' imported':'')+(allowed?'':' is-disabled')+(selected?' is-selected':'');
-    const checkbox=document.createElement('input');
-    checkbox.type='checkbox';checkbox.className='vrc-live-check';
-    checkbox.checked=selected;checkbox.disabled=!allowed;
-    checkbox.dataset.sourceKey=String(r.sourceLogKey||'');
-    checkbox.addEventListener('change',()=>{
-      if(checkbox.checked)selectedKeys.add(r.sourceLogKey);
+    node.disabled=!allowed;
+    node.dataset.sourceKey=String(r.sourceLogKey||'');
+    node.setAttribute('aria-pressed',String(selected));
+    node.setAttribute('aria-label',
+      [r.round||'未対応ラウンド',r.variant,formatDate(r.start),
+        duplicate?'取込済み':selected?'選択中':'未選択'].filter(Boolean).join(' / '));
+    node.onclick=()=>{
+      if(!allowed)return;
+      const active=!selectedKeys.has(r.sourceLogKey);
+      if(active)selectedKeys.add(r.sourceLogKey);
       else selectedKeys.delete(r.sourceLogKey);
-      node.classList.toggle('is-selected',checkbox.checked);
+      node.classList.toggle('is-selected',active);
+      node.setAttribute('aria-pressed',String(active));
       updateSelectedCount();
-    });
+    };
     const body=document.createElement('span');body.className='vrc-live-round-content';
     const headline=document.createElement('span');headline.className='vrc-live-card-top';
     const roundSprite=document.createElement('span');roundSprite.className='vrc-live-round-icon';
@@ -84,14 +91,9 @@ function renderScan(){
       (roundIcon(r.round,r.variant)||roundIcon(r.round)):null;
     if(roundArt)roundSprite.append(roundArt);
     else roundSprite.textContent='?';
-    const heading=document.createElement('span');heading.className='vrc-live-head-info';
-    const roundName=document.createElement('strong');roundName.className='vrc-live-round-name';
-    roundName.textContent=[r.round||'未対応',r.variant].filter(Boolean).join(' / ');
     const time=document.createElement('span');time.className='vrc-live-round-time';
     time.textContent=formatDate(r.start).slice(5);
-    heading.append(roundName,time);headline.append(roundSprite,heading);
     // Unverified killer IDs must stay as question marks. Never guess an icon.
-    const terrorRow=document.createElement('span');terrorRow.className='vrc-live-terror-row';
     const known=Array.isArray(r.terrors)?r.terrors:[];
     const slots=r.round==='Moon'||r.round==='Other'?0:
       r.round==='Midnight'?3:r.round==='Bloodbath'?
@@ -108,7 +110,8 @@ function renderScan(){
         (r.unmappedKillerIds?.length?'未確認ログID: '+r.unmappedKillerIds.join(', '):'テラー未確定');
       terrorGroup.append(cell);
     }
-    if(slots)terrorRow.append(terrorGroup);
+    headline.append(roundSprite);
+    if(slots)headline.append(terrorGroup);
     const mapRow=document.createElement('span');mapRow.className='vrc-live-map-row';
     const badge=r.map&&typeof mapBadge==='function'?mapBadge(r.map):null;
     if(badge){mapRow.append(badge);mapRow.title=mapName(r.map);}
@@ -131,10 +134,8 @@ function renderScan(){
     const info=document.createElement('span');info.className='vrc-live-meta';
     info.textContent=[duplicate?'取込済み':!r.round?'ラウンド未対応':r.ended?'終了':'進行中',r.status].filter(Boolean).join(' · ');
     info.title=info.textContent;
-    body.append(headline);
-    if(slots)body.append(terrorRow);
-    body.append(mapRow,people,info);
-    node.append(checkbox,body);items.append(node);
+    body.append(headline,time,mapRow,people,info);
+    node.append(body);items.append(node);
   }
   updateSelectedCount();
 }
