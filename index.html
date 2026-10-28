@@ -1070,15 +1070,19 @@ function updateForm(){
  r.classList.toggle('selected',!!form.round);
  const t=$('terrorButton');
  const max=currentMax(),chosen=[...form.terrors];
+ // Keep each terror slot visible before selection: BB=3, DT=2, EX=3 copies, Midnight=2 Classic + 1 Alternate.
  const slots=form.round==='Midnight'?[
    ...chosen.filter(id=>!id.startsWith('A')).slice(0,2),
    ...Array(Math.max(0,2-chosen.filter(id=>!id.startsWith('A')).length)).fill(null),
    chosen.find(id=>id.startsWith('A'))||null
- ]:form.round==='Bloodbath'&&form.variant==='EX'?Array(3).fill(chosen[0]||null):chosen;
- if(slots.some(Boolean)){
-   t.replaceChildren(...slots.map(id=>id?terrorIcon(id,form.round,form.variant,form.rareChoices?.[id]):questionIcon(form.round,form.variant)));
-   t.classList.add('has-terror-sprite');
- }else{t.replaceChildren(questionIcon(form.round,form.variant));t.classList.add('has-terror-sprite')}
+ ]:form.round==='Bloodbath'?
+   (form.variant==='EX'?Array(3).fill(chosen[0]||null):
+     [...chosen.slice(0,max),...Array(Math.max(0,max-chosen.length)).fill(null)]):
+   chosen;
+ t.replaceChildren(...(slots.length?slots:[null]).map(id=>
+   id?terrorIcon(id,form.round,form.variant,form.rareChoices?.[id]):questionIcon(form.round,form.variant)
+ ));
+ t.classList.add('has-terror-sprite');
  t.title=chosen.map(id=>terrorDisplayName(id,form.round,form.rareChoices?.[id])).join(' / ')||'テラーを選択';
  t.setAttribute('aria-label',t.title);
  t.disabled=disableTerrorSelection();
