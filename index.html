@@ -1305,30 +1305,33 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
  align-items:center!important;
 }
 
-/* Compact result rows; preserve sprite and label size and drop insertion feedback.
-   Unbound's icon/name stack now determines its height instead of a tall empty minimum. */
+/* Fit result rows close to the actual artwork height, without clipping labels.
+   Drag/drop insertion keeps its reserved padding, and Unbound keeps full-size icons. */
 .results-workspace .summary-record:not(.enlarged):not(.unbound-row):not(.text-record):not(.summary-drop-target):not(.summary-drop-after){
- min-height:36px!important;
+ min-height:34px!important;
  padding:1px 0 1px 4px!important;
 }
 .results-workspace .summary-record.unbound-row:not(.enlarged):not(.text-record):not(.summary-drop-target):not(.summary-drop-after){
- min-height:58px!important;
+ min-height:53px!important;
  padding:1px 0 1px 4px!important;
 }
+.results-workspace .summary-record.unbound-row:not(.text-record) .summary-terror-icons{
+ gap:0!important;
+}
 .results-workspace .summary-record.enlarged:not(.text-record):not(.unbound-row):not(.summary-drop-target):not(.summary-drop-after){
- min-height:104px!important;
+ min-height:100px!important;
  padding:1px 0 1px 4px!important;
 }
 .results-workspace .summary-record.enlarged.unbound-row:not(.text-record):not(.summary-drop-target):not(.summary-drop-after){
- min-height:130px!important;
+ min-height:126px!important;
  padding:1px 0 1px 4px!important;
 }
 .results-workspace .summary-record.text-record:not(.enlarged):not(.summary-drop-target):not(.summary-drop-after){
- min-height:42px!important;
+ min-height:41px!important;
  padding:1px 0 1px 4px!important;
 }
 .results-workspace .summary-record.text-record.enlarged:not(.summary-drop-target):not(.summary-drop-after){
- min-height:52px!important;
+ min-height:50px!important;
  padding:1px 0 1px 4px!important;
 }
 </style></head><body><main class="shell">
@@ -2077,11 +2080,11 @@ function summaryRecordsByBase(){
  return blocks;
 }
 function summaryRowHeight(rec){
- // Keep column balancing in sync with compact CSS; content can still grow naturally.
- if(state.mode==='text')return rec.summaryUppercase?70:42;
- if(rec.summaryUppercase)return rec.round==='Unbound'?130:104;
- if(rec.round==='Unbound')return 58;
- return 38;
+ // Match the tight result rows when balancing the two summary columns.
+ if(state.mode==='text')return rec.summaryUppercase?50:41;
+ if(rec.summaryUppercase)return rec.round==='Unbound'?126:100;
+ if(rec.round==='Unbound')return 53;
+ return 34;
 }
 function summaryBlockHeight(block){
  return block.groups.reduce((h,g)=>h+33+g.records.reduce((n,r)=>n+summaryRowHeight(r),0)+9,0)+7;
