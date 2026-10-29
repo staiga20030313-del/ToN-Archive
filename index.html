@@ -1305,27 +1305,27 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
  align-items:center!important;
 }
 
-/* Tighter spacing between individual results, without changing icon/text sizes.
-   Preserve expanded drop-target padding while records are being reordered. */
+/* Compact individual result spacing without shrinking icons or labels.
+   Drag-and-drop preview padding retains its separate layout. */
 .results-workspace .summary-record:not(.enlarged):not(.unbound-row):not(.summary-drop-target):not(.summary-drop-after){
- min-height:44px!important;
- padding:4px 0 2px 4px!important;
+ min-height:39px!important;
+ padding:1px 0 1px 4px!important;
 }
 .results-workspace .summary-record.unbound-row:not(.enlarged):not(.summary-drop-target):not(.summary-drop-after){
- min-height:84px!important;
- padding:3px 0 2px 4px!important;
+ min-height:80px!important;
+ padding:1px 0 1px 4px!important;
 }
 .results-workspace .summary-record.enlarged:not(.text-record):not(.unbound-row):not(.summary-drop-target):not(.summary-drop-after){
- min-height:124px!important;
- padding:5px 0 3px 4px!important;
+ min-height:112px!important;
+ padding:3px 0 2px 4px!important;
 }
 .results-workspace .summary-record.enlarged.unbound-row:not(.summary-drop-target):not(.summary-drop-after){
- min-height:154px!important;
- padding:5px 0 3px 4px!important;
+ min-height:150px!important;
+ padding:2px 0 1px 4px!important;
 }
 .results-workspace .summary-record.text-record.enlarged:not(.summary-drop-target):not(.summary-drop-after){
- min-height:64px!important;
- padding:4px 0 2px 4px!important;
+ min-height:58px!important;
+ padding:2px 0 1px 4px!important;
 }
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.56">v1.0.56</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
