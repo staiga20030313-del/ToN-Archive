@@ -1250,6 +1250,46 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 }
 #tileGrid.terror-layout.unbound-layout .unbound-pair-name:not(.second){text-align:left!important}
 #tileGrid.terror-layout.unbound-layout .unbound-pair-name.second{text-align:right!important}
+
+/* Unbound picker: fit all 14 rows and 3 pairs within one viewport, no scrollbars. */
+.archive-workspace .entry-panel .selector.terror-selecting:has(#tileGrid.unbound-layout){
+ width:min(850px,calc(100vw - 290px))!important;
+ max-width:calc(100vw - 290px)!important;
+ max-height:calc(100dvh - 20px)!important;
+ overflow:hidden!important;
+ display:flex!important;flex-direction:column!important;
+}
+.archive-workspace .entry-panel .selector.terror-selecting #tileGrid.unbound-layout{
+ --ub-row:min(42px,calc((100dvh - 155px)/14));
+ grid-template-columns:repeat(3,minmax(0,42px) minmax(0,1fr) minmax(0,42px))!important;
+ grid-template-rows:repeat(14,var(--ub-row))!important;
+ grid-auto-rows:var(--ub-row)!important;
+ column-gap:3px!important;row-gap:2px!important;
+ width:100%!important;max-width:100%!important;
+ height:auto!important;max-height:none!important;
+ overflow:hidden!important;flex:0 1 auto!important;
+}
+.archive-workspace .entry-panel .selector.terror-selecting #tileGrid.unbound-layout .tile.unbound{
+ width:min(42px,var(--ub-row))!important;height:var(--ub-row)!important;
+ min-height:0!important;max-height:42px!important;padding:1px!important;
+ justify-self:center!important;
+}
+.archive-workspace .entry-panel .selector.terror-selecting #tileGrid.unbound-layout .tile.unbound .terror-icon,
+.archive-workspace .entry-panel .selector.terror-selecting #tileGrid.unbound-layout .tile.unbound .terror-canvas{
+ width:min(38px,calc(var(--ub-row) - 2px))!important;
+ height:min(38px,calc(var(--ub-row) - 2px))!important;
+}
+.archive-workspace .entry-panel .selector.terror-selecting #tileGrid.unbound-layout .unbound-pair-name{
+ font-size:10px!important;line-height:clamp(10px,calc(var(--ub-row)/2),17px)!important;
+}
+@media(max-width:700px){
+ .archive-workspace .entry-panel .selector.terror-selecting:has(#tileGrid.unbound-layout){
+  width:100%!important;max-width:100%!important;
+ }
+ .archive-workspace .entry-panel .selector.terror-selecting #tileGrid.unbound-layout{
+  grid-template-columns:repeat(3,minmax(0,34px) minmax(0,1fr) minmax(0,34px))!important;
+ }
+}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.53">v1.0.53</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
