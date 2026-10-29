@@ -1305,27 +1305,31 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
  align-items:center!important;
 }
 
-/* Compact individual result spacing without shrinking icons or labels.
-   Drag-and-drop preview padding retains its separate layout. */
-.results-workspace .summary-record:not(.enlarged):not(.unbound-row):not(.summary-drop-target):not(.summary-drop-after){
- min-height:39px!important;
+/* Compact result rows; preserve sprite and label size and drop insertion feedback.
+   Unbound's icon/name stack now determines its height instead of a tall empty minimum. */
+.results-workspace .summary-record:not(.enlarged):not(.unbound-row):not(.text-record):not(.summary-drop-target):not(.summary-drop-after){
+ min-height:36px!important;
  padding:1px 0 1px 4px!important;
 }
-.results-workspace .summary-record.unbound-row:not(.enlarged):not(.summary-drop-target):not(.summary-drop-after){
- min-height:80px!important;
+.results-workspace .summary-record.unbound-row:not(.enlarged):not(.text-record):not(.summary-drop-target):not(.summary-drop-after){
+ min-height:58px!important;
  padding:1px 0 1px 4px!important;
 }
 .results-workspace .summary-record.enlarged:not(.text-record):not(.unbound-row):not(.summary-drop-target):not(.summary-drop-after){
- min-height:112px!important;
- padding:3px 0 2px 4px!important;
+ min-height:104px!important;
+ padding:1px 0 1px 4px!important;
 }
-.results-workspace .summary-record.enlarged.unbound-row:not(.summary-drop-target):not(.summary-drop-after){
- min-height:150px!important;
- padding:2px 0 1px 4px!important;
+.results-workspace .summary-record.enlarged.unbound-row:not(.text-record):not(.summary-drop-target):not(.summary-drop-after){
+ min-height:130px!important;
+ padding:1px 0 1px 4px!important;
+}
+.results-workspace .summary-record.text-record:not(.enlarged):not(.summary-drop-target):not(.summary-drop-after){
+ min-height:42px!important;
+ padding:1px 0 1px 4px!important;
 }
 .results-workspace .summary-record.text-record.enlarged:not(.summary-drop-target):not(.summary-drop-after){
- min-height:58px!important;
- padding:2px 0 1px 4px!important;
+ min-height:52px!important;
+ padding:1px 0 1px 4px!important;
 }
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.57">v1.0.57</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
@@ -2073,9 +2077,11 @@ function summaryRecordsByBase(){
  return blocks;
 }
 function summaryRowHeight(rec){
- if(rec.summaryUppercase)return rec.round==='Unbound'?185:140;
- if(rec.round==='Unbound')return 103;
- return 53;
+ // Keep column balancing in sync with compact CSS; content can still grow naturally.
+ if(state.mode==='text')return rec.summaryUppercase?70:42;
+ if(rec.summaryUppercase)return rec.round==='Unbound'?130:104;
+ if(rec.round==='Unbound')return 58;
+ return 38;
 }
 function summaryBlockHeight(block){
  return block.groups.reduce((h,g)=>h+33+g.records.reduce((n,r)=>n+summaryRowHeight(r),0)+9,0)+7;
