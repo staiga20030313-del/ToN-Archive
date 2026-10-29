@@ -1290,6 +1290,20 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
   grid-template-columns:repeat(3,minmax(0,34px) minmax(0,1fr) minmax(0,34px))!important;
  }
 }
+
+/* VRC log: center the terror sprite strip in the space after the round icon. */
+.vrc-live-panel .vrc-live-card-top{position:relative!important;gap:0!important}
+.vrc-live-panel .vrc-live-card-top .vrc-live-round-icon{margin-right:0!important}
+.vrc-live-panel .vrc-live-card-top .vrc-live-terror-icons{
+ flex:0 1 auto!important;
+ width:max-content!important;
+ min-width:0!important;
+ max-width:calc(100% - 28px)!important;
+ margin-left:auto!important;
+ margin-right:auto!important;
+ justify-content:center!important;
+ align-items:center!important;
+}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.54">v1.0.54</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
