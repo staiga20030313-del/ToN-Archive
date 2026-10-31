@@ -310,15 +310,16 @@ function errorText(error){
   return error?.message||String(error||'不明なエラー');
 }
 async function poll(force=false){
-  if(!directory)return;
+  if(!directory||activeLogSource!=='directory')return;
   if(scanning){
     if(force)refreshPending=true;
     return;
   }
+  const scanDirectory=directory;
   scanning=true;
   try{
     const found=[];
-    for await(const [name,handle] of directory.entries()){
+    for await(const [name,handle] of scanDirectory.entries()){
       if(handle.kind==='file'&&/^output_log_.*\.txt$/i.test(name))found.push({name,handle});
     }
     found.sort((a,b)=>b.name.localeCompare(a.name));
@@ -338,6 +339,9 @@ async function poll(force=false){
     }
     if(!window.TON_VRC_LOG)throw Error('ログ解析機能が未読込です');
     const data=window.TON_VRC_LOG.analyze(await file.text(),file.name,MAP_DATA);
+    // A manually chosen file or newly connected folder must not be replaced
+    // by a stale asynchronous directory scan that started earlier.
+    if(activeLogSource!=='directory'||directory!==scanDirectory)return;
     lastSignature=signature;previousFile=file.name;
     publish(data,file,'directory');
     setStatus('監視中 · '+data.rounds.length+'ラウンド','watching');
@@ -347,7 +351,7 @@ async function poll(force=false){
     scanning=false;
     if(refreshPending){
       refreshPending=false;
-      void poll(true);
+      if(activeLogSource==='directory')void poll(true);
     }
   }
 }
