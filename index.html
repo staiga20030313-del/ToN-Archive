@@ -1307,30 +1307,30 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 
 /* Fit result rows close to the actual artwork height, without clipping labels.
    Drag/drop insertion keeps its reserved padding, and Unbound keeps full-size icons. */
-.results-workspace .summary-record:not(.enlarged):not(.unbound-row):not(.text-record):not(.summary-drop-target):not(.summary-drop-after){
+.results-workspace .summary-record:not(.enlarged):not(.unbound-row):not(.text-record){
  min-height:34px!important;
  padding:1px 0 1px 4px!important;
 }
-.results-workspace .summary-record.unbound-row:not(.enlarged):not(.text-record):not(.summary-drop-target):not(.summary-drop-after){
+.results-workspace .summary-record.unbound-row:not(.enlarged):not(.text-record){
  min-height:53px!important;
  padding:1px 0 1px 4px!important;
 }
 .results-workspace .summary-record.unbound-row:not(.text-record) .summary-terror-icons{
  gap:0!important;
 }
-.results-workspace .summary-record.enlarged:not(.text-record):not(.unbound-row):not(.summary-drop-target):not(.summary-drop-after){
+.results-workspace .summary-record.enlarged:not(.text-record):not(.unbound-row){
  min-height:100px!important;
  padding:1px 0 1px 4px!important;
 }
-.results-workspace .summary-record.enlarged.unbound-row:not(.text-record):not(.summary-drop-target):not(.summary-drop-after){
+.results-workspace .summary-record.enlarged.unbound-row:not(.text-record){
  min-height:126px!important;
  padding:1px 0 1px 4px!important;
 }
-.results-workspace .summary-record.text-record:not(.enlarged):not(.summary-drop-target):not(.summary-drop-after){
+.results-workspace .summary-record.text-record:not(.enlarged){
  min-height:41px!important;
  padding:1px 0 1px 4px!important;
 }
-.results-workspace .summary-record.text-record.enlarged:not(.summary-drop-target):not(.summary-drop-after){
+.results-workspace .summary-record.text-record.enlarged{
  min-height:50px!important;
  padding:1px 0 1px 4px!important;
 }
