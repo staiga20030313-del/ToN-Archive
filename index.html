@@ -1468,7 +1468,8 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
  grid-area:log;position:sticky!important;top:0!important;
  align-self:start!important;min-width:0;
  width:100%!important;
- height:100dvh!important;max-height:100dvh!important;
+ height:var(--vrc-log-height,100dvh)!important;
+ max-height:var(--vrc-log-height,100dvh)!important;
  min-height:0!important;margin:0!important;
  display:flex!important;flex-direction:column!important;overflow:hidden!important;
 }
@@ -2930,7 +2931,11 @@ function resizeArchiveInterface(){
   const shell=document.querySelector('.shell');
   const viewport=window.innerWidth;
   const scale=viewport>=1280?Math.min(1.55,Math.max(1,(viewport-48)/1250)):1;
-  shell.style.zoom=String(Math.round(scale*1000)/1000);
+  const zoom=Math.round(scale*1000)/1000;
+  shell.style.zoom=String(zoom);
+  // CSS zoom scales the right rail as well: compensate so its bottom remains
+  // inside the visible viewport, with the detected-round list scrollable.
+  shell.style.setProperty('--vrc-log-height',Math.floor(window.innerHeight/zoom)+'px');
   if(typeof selector!=='undefined'&&selector==='terror')fitStandaloneTerrorGrid();
 }
 window.addEventListener('resize',resizeArchiveInterface,{passive:true});
