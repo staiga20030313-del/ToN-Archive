@@ -2445,6 +2445,24 @@ function summaryGroup(group,base,column){
  if(summaryEditMode&&!highlighted){
    title.append(summaryGrip('summary-round-grip','ラウンド全体をドラッグ',{type:'round',base}));
    box.ondragover=e=>{
+     if(summaryDrag?.type==='record'){
+       // In the opened margin gap the underlying target is the group rather
+       // than the row. Keep that gap active so dropping into it still works.
+       if(e.target.closest('.summary-record'))return;
+       const entries=current().records,source=entries.find(r=>r.id===summaryDrag.id);
+       const valid=[...box.querySelectorAll('.summary-record')].filter(el=>{
+         const rec=entries.find(r=>r.id===el.dataset.id);
+         return source&&rec&&rec.id!==source.id&&rec.round===source.round&&
+           (rec.variant||'')===(source.variant||'')&&!!rec.summaryPinned===!!source.summaryPinned;
+       });
+       if(!valid.length)return;
+       e.preventDefault();e.stopPropagation();
+       const target=valid.reduce((best,el)=>Math.abs(el.getBoundingClientRect().top+el.getBoundingClientRect().height/2-e.clientY)<
+         Math.abs(best.getBoundingClientRect().top+best.getBoundingClientRect().height/2-e.clientY)?el:best);
+       const rect=target.getBoundingClientRect();
+       summaryMarkDrop(target,e.clientY>rect.top+rect.height/2);
+       return;
+     }
      if(summaryDrag?.type!=='round'||summaryDrag.base===base)return;
      e.preventDefault();e.stopPropagation();
      const rect=box.getBoundingClientRect(),after=e.clientY>rect.top+rect.height/2;
@@ -2454,6 +2472,11 @@ function summaryGroup(group,base,column){
      summaryMarkDrop(after?groups[groups.length-1]:groups[0],after);
    };
    box.ondrop=e=>{
+     if(summaryDrag?.type==='record'){
+       const active=box.querySelector('.summary-record.summary-drop-target');
+       if(active)summaryDropOn(e,{id:active.dataset.id,after:active.classList.contains('summary-drop-after')});
+       return;
+     }
      const active=[...box.parentElement.children].find(el=>el.classList.contains('summary-group')&&el.dataset.round===base&&el.classList.contains('summary-drop-target'));
      summaryDropOn(e,{base,after:!!active?.classList.contains('summary-drop-after')},column);
    };
@@ -2491,6 +2514,22 @@ function renderRecords(){
  const cols=[dom('div','summary-column'),dom('div','summary-column')];
  for(let i=0;i<2;i++){
    cols[i].dataset.column=String(i);
+   cols[i].ondragover=e=>{
+     if(summaryDrag?.type!=='round'||e.target.closest('.summary-group,.summary-column-end'))return;
+     e.preventDefault();e.stopPropagation();
+     const active=cols[i].querySelector('.summary-drop-target');
+     if(!active){
+       const end=cols[i].querySelector('.summary-column-end');
+       if(end)summaryMarkDrop(end);
+     }
+   };
+   cols[i].ondrop=e=>{
+     if(summaryDrag?.type!=='round')return;
+     const active=cols[i].querySelector('.summary-drop-target');
+     if(!active)return;
+     if(active.classList.contains('summary-column-end'))summaryDropOn(e,null,i);
+     else summaryDropOn(e,{base:active.dataset.round,after:active.classList.contains('summary-drop-after')},i);
+   };
    for(const block of blocks[i]){
      for(const group of block.groups){
        const selected=group.records.filter(rec=>filtered.includes(rec));
@@ -2507,6 +2546,7 @@ function renderRecords(){
  }
  root.append(...cols);
 }
+document.addEventListener('dragend',()=>{if(summaryDrag)summaryFinishDrag()},true);
 function summaryInit(){
  const buttons=['listView','iconView'];
  for(const id of buttons){const b=$(id);if(b)b.hidden=false}
