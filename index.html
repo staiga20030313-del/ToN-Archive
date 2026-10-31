@@ -1526,6 +1526,20 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 .shell>.archive-workspace .summary-header-actions button{
  font-size:11px;padding:5px 9px;white-space:nowrap;
 }
+
+/* Keep both highlight outlines clear of icons, maps and text.
+   The outer/inner paths stay fixed; only the highlight contents gain inset. */
+.results-workspace .summary-group.highlights{
+ padding:0 14px 12px 0!important;
+}
+.results-workspace .summary-group.highlights .summary-group-head{
+ height:36px!important;min-height:36px!important;
+}
+.results-workspace .summary-group.highlights .summary-record{
+ margin-left:44px!important;
+ width:calc(100% - 60px)!important;
+ min-width:0!important;
+}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.76">v1.0.76</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
@@ -2482,7 +2496,7 @@ function summaryShowContext(event,rec){
    menu.append(dom('div','summary-menu-divider'));
    command('大文字・拡大',()=>{rec.summaryUppercase=!rec.summaryUppercase;summarySaveAndDraw()},!!rec.summaryUppercase);
    command('太文字（人数）',()=>{rec.summaryBold=!rec.summaryBold;summarySaveAndDraw()},!!rec.summaryBold);
-   command('最上段に配置',()=>{rec.summaryPinned=!rec.summaryPinned;summarySaveAndDraw()},!!rec.summaryPinned);
+   command('ハイライト',()=>{rec.summaryPinned=!rec.summaryPinned;summarySaveAndDraw()},!!rec.summaryPinned);
  }
  menu.hidden=false;
  const w=195,h=summaryEditMode?255:100;
@@ -2637,7 +2651,10 @@ async function summaryExportPng(){
  try{
    if(document.fonts?.ready)await document.fonts.ready;
    const rowHeight=rec=>iconMode?summaryRowHeight(rec):(rec.summaryUppercase?70:49);
-   const groupHeight=group=>25+group.records.reduce((sum,rec)=>sum+rowHeight(rec),0)+3;
+   // Highlights needs clear space between its double frame and the first/last
+   // artwork rows. Keep PNG geometry aligned with the on-screen summary.
+   const groupHeight=group=>25+group.records.reduce((sum,rec)=>sum+rowHeight(rec),0)+3+
+     (group.round==='__highlights'?24:0);
    const blocksHeight=col=>col.reduce((sum,block)=>sum+block.groups.reduce((s,group)=>s+groupHeight(group)+gap,0),0);
    const H=Math.ceil(Math.max(140,headerH+pad+Math.max(...cols.map(blocksHeight))+pad));
    if(H>16000)throw Error('PNGの高さ上限を超えました');
@@ -2681,7 +2698,8 @@ async function summaryExportPng(){
          g.font='700 16px "PixelMplus12",sans-serif';
          g.fillStyle=group.round==='__highlights'?'#d8b3f9':'#efe8f3';
          g.fillText(title,titleX,y+22,Math.max(0,width-65));
-         let ry=y+25;
+         const highlightInset=group.round==='__highlights'?12:0;
+         let ry=y+25+highlightInset;
          for(const r of group.records){
            const rh=rowHeight(r),large=!!r.summaryUppercase;
            const ids=r.round==='Bloodbath'&&r.variant==='EX'&&r.terrors?.[0]?Array(3).fill(r.terrors[0]):r.terrors||[];
@@ -2691,33 +2709,33 @@ async function summaryExportPng(){
                const size=id.startsWith('U')?(large?76:38):(large?64:32);
                if(art){
                  const col=k%3,row=Math.floor(k/3);
-                 const startX=x+39+col*size,startY=ry+5+row*(size+4);
+                 const startX=x+39+highlightInset+col*size,startY=ry+5+row*(size+4);
                  g.imageSmoothingEnabled=false;g.drawImage(art,startX,startY,size,size);
                }
              }
              if(r.round==='Unbound'&&ids[0]){
                g.font=(large?'18':'11')+'px "PixelMplus12",sans-serif';
                g.fillStyle='#eee8f3';
-               g.fillText(terrorDisplayName(ids[0],r.round,r.rareChoices?.[ids[0]]),x+39,ry+(large?116:57),190);
+               g.fillText(terrorDisplayName(ids[0],r.round,r.rareChoices?.[ids[0]]),x+39+highlightInset,ry+(large?116:57),190);
              }
            }else{
              const label=ids.map(id=>terrorDisplayName(id,r.round,r.rareChoices?.[id])).join(', ')||'—';
              g.font=(r.summaryBold?'700 ':'400 ')+(large?'22':'15')+'px "PixelMplus12",sans-serif';
-             g.fillStyle='#eee8f3';g.fillText(large?label.toUpperCase():label,x+52,ry+(large?45:31),360);
+             g.fillStyle='#eee8f3';g.fillText(large?label.toUpperCase():label,x+52+highlightInset,ry+(large?45:31),360);
            }
            const vals=summaryCounts(r);
            if(iconMode){
              // Native: map at right, numbers immediately to its left.
-             const mapX=x+width-4-4-204;
+             const mapX=x+width-4-4-204-highlightInset;
              const countX=mapX-146,newX=mapX-68;
              g.fillStyle='#efe8f3';
              g.font=(r.summaryBold?'700 ':'400 ')+(large?'29':'18')+'px "PixelMplus12",sans-serif';
-             if(vals.pair)g.fillText(vals.pair,large?x+274:countX,ry+(large?39:29),large?126:72);
+             if(vals.pair)g.fillText(vals.pair,large?x+274+highlightInset:countX,ry+(large?39:29),large?126:72);
              if(vals.newcomer){
                g.fillStyle='#ad9cb7';g.font=(large?'17':'12')+'px "PixelMplus12",sans-serif';
-               g.fillText('New',large?x+402:newX,ry+(large?33:27));
+               g.fillText('New',large?x+402+highlightInset:newX,ry+(large?33:27));
                g.fillStyle='#eee8f3';g.font=(r.summaryBold?'700 ':'400 ')+(large?'29':'18')+'px "PixelMplus12",sans-serif';
-               g.fillText(vals.newcomer,(large?x+448:newX+28),ry+(large?39:29),55);
+               g.fillText(vals.newcomer,(large?x+448+highlightInset:newX+28),ry+(large?39:29),55);
              }
              if(r.map){
                const badge=mapBadge(r.map);
@@ -2727,7 +2745,7 @@ async function summaryExportPng(){
              g.fillStyle='#eee8f3';g.font=(large?'27':'18')+'px "PixelMplus12",sans-serif';
              if(vals.pair)g.fillText(vals.pair,x+540,ry+31,110);
              if(vals.newcomer){g.fillText('New '+vals.newcomer,x+650,ry+31,100)}
-             if(r.map){const badge=mapBadge(r.map);if(badge){g.imageSmoothingEnabled=false;g.drawImage(badge,x+width-210,ry+4,204,40)}}
+             if(r.map){const badge=mapBadge(r.map);if(badge){g.imageSmoothingEnabled=false;g.drawImage(badge,x+width-210-highlightInset,ry+4,204,40)}}
            }
            ry+=rh;
          }
