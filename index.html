@@ -2718,11 +2718,19 @@ function summaryDragStart(e,data,ghost){
  if(!originals.length){e.preventDefault();return}
  summaryDrag=data;
  summaryDragSourceNodes=originals;
- const rowGap=originals.length>1?
+ // getBoundingClientRect() is already scaled by the shell's CSS zoom.
+ // Reusing that value as a CSS height would zoom the insertion gap twice.
+ // offsetHeight is the unscaled height actually occupied in layout.
+ const isRound=data.type==='round';
+ const columnGap=isRound?
    (parseFloat(getComputedStyle(originals[0].parentElement).rowGap)||0):0;
- const height=originals.reduce((sum,element)=>sum+element.getBoundingClientRect().height,0)
-   +rowGap*Math.max(0,originals.length-1);
- root.style.setProperty('--summary-drag-gap',Math.ceil(height)+'px');
+ const occupiedHeight=originals.reduce((sum,element)=>sum+element.offsetHeight,0)
+   +columnGap*Math.max(0,originals.length-1);
+ // A group placeholder creates another flex child, which itself produces
+ // one column gap. Subtract that gap so items below move down by exactly
+ // the original dragged block's height, not height + extra spacing.
+ const placeholderHeight=Math.max(0,occupiedHeight-(isRound?columnGap:0));
+ root.style.setProperty('--summary-drag-gap',placeholderHeight+'px');
  e.dataTransfer.effectAllowed='move';
  e.dataTransfer.setData('text/plain',JSON.stringify(data));
  if(ghost)e.dataTransfer.setDragImage(ghost,12,12);
