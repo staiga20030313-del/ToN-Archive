@@ -2506,31 +2506,33 @@ let summaryRoundImageReady=false;
 const summaryRoundPalette=new Map();
 summaryRoundImage.onload=()=>{summaryRoundImageReady=true;summaryRoundPalette.clear();renderRecords()};
 summaryRoundImage.src='./assets/round_atlas.png';
-/* Native RecordsCanvas orders by full RoundId|RoundVariantId, with first
-   appearance as the fallback. Preserve imported per-variant order. */
+/* Each subround is a separate sortable block, identified by the complete
+   Round|Variant key. This also preserves interleaved orders imported from the
+   native app and older grouped summaryRoundOrder lists. */
+function summaryVariantKey(round,variant=''){return round+'|'+(variant||'')}
 function summaryBaseOrder(){
  const session=current(),records=session.records.filter(r=>!r.summaryPinned);
- const used=[...new Set(records.map(r=>r.round))];
+ const used=[...new Set(records.map(r=>summaryVariantKey(r.round,r.variant)))];
  const stored=Array.isArray(session.summaryRoundOrder)?session.summaryRoundOrder:[];
- const rank=base=>stored.findIndex(key=>key===base||String(key).startsWith(base+'|'));
+ const rank=key=>{
+   const exact=stored.indexOf(key);
+   if(exact>=0)return exact;
+   // Very old sessions may store a bare round name, without its variant.
+   return stored.indexOf(key.split('|')[0]);
+ };
  return used.sort((a,b)=>{
    const ai=rank(a),bi=rank(b);
-   return ai<0&&bi<0?0:(ai<0?Infinity:ai)-(bi<0?Infinity:bi);
+   return (ai<0?Infinity:ai)-(bi<0?Infinity:bi)||
+     used.indexOf(a)-used.indexOf(b);
  });
 }
 function summaryRecordsByBase(){
- const session=current(),stored=Array.isArray(session.summaryRoundOrder)?session.summaryRoundOrder:[],blocks=[];
- for(const base of summaryBaseOrder()){
-   const entries=session.records.filter(r=>!r.summaryPinned&&r.round===base);
-   const variantsInOrder=[...new Set(entries.map(r=>r.variant||''))];
-   variantsInOrder.sort((a,b)=>{
-     const ai=stored.indexOf(base+'|'+a),bi=stored.indexOf(base+'|'+b);
-     return ai<0&&bi<0?0:(ai<0?Infinity:ai)-(bi<0?Infinity:bi);
-   });
-   const subs=variantsInOrder.map(variant=>({round:base,variant,records:entries.filter(r=>(r.variant||'')===variant)}));
-   blocks.push({base,groups:subs});
- }
- return blocks;
+ const records=current().records.filter(r=>!r.summaryPinned);
+ return summaryBaseOrder().map(key=>{
+   const split=key.indexOf('|'),round=key.slice(0,split),variant=key.slice(split+1);
+   const group={round,variant,records:records.filter(r=>summaryVariantKey(r.round,r.variant)===key)};
+   return {base:key,groups:[group]};
+ });
 }
 function summaryRowHeight(rec){
  // Match the tight result rows when balancing the two summary columns.
@@ -2551,7 +2553,9 @@ function summaryBuildColumns(){
  }
  const assigned=session.summaryRoundColumns||{};
  for(const block of summaryRecordsByBase()){
-   const pinnedCol=assigned[block.base];
+   // Prefer per-variant placement, falling back to legacy per-round columns.
+   const round=block.groups[0].round;
+   const pinnedCol=assigned[block.base]??assigned[round];
    const col=(pinnedCol===0||pinnedCol===1)?pinnedCol:(height[0]<=height[1]?0:1);
    cols[col].push(block);
    height[col]+=summaryBlockHeight(block);
@@ -2663,7 +2667,7 @@ function summarySaveAndDraw(){
  persist();renderRecords();
 }
 function summaryMoveRound(from,to,column,after=false){
- if(!from||from==='__highlights'||(from===to&&column===undefined))return;
+ if(!from||from==='__highlights'||from===to)return;
  if(column!==0&&column!==1)return;
  const session=current(),blocks=summaryRecordsByBase();
  if(!blocks.some(block=>block.base===from))return;
@@ -2682,8 +2686,9 @@ function summaryMoveRound(from,to,column,after=false){
    index=last?order.indexOf(last)+1:order.length;
  }
  order.splice(index,0,from);
- // Freeze current columns before changing the order. Without this, height
- // rebalancing can move an unrelated round on every drag.
+ // Freeze the current column of EACH subround before moving one of them.
+ // Old round-wide assignments still work through the fallback in
+ // summaryBuildColumns; new drag operations persist variant-specific keys.
  const assigned={...(session.summaryRoundColumns||{})};
  for(let col=0;col<2;col++){
    for(const block of snapshot[col]){
@@ -2692,10 +2697,7 @@ function summaryMoveRound(from,to,column,after=false){
  }
  assigned[from]=column;
  session.summaryRoundColumns=assigned;
- // Native persists round AND variant IDs. Do not discard imported subround
- // ordering when a base round is dragged.
- session.summaryRoundOrder=order.flatMap(base=>
-   (blocks.find(block=>block.base===base)?.groups||[]).map(group=>base+'|'+group.variant));
+ session.summaryRoundOrder=order;
  summarySaveAndDraw();
 }
 function summaryMoveRecord(id,target,after){
@@ -2728,7 +2730,7 @@ function summaryDragStart(e,data,ghost){
    +columnGap*Math.max(0,originals.length-1);
  // A group placeholder creates another flex child, which itself produces
  // one column gap. Subtract that gap so items below move down by exactly
- // the original dragged block's height, not height + extra spacing.
+ // the moved subround's height, not height + extra spacing.
  const placeholderHeight=Math.max(0,occupiedHeight-(isRound?columnGap:0));
  root.style.setProperty('--summary-drag-gap',placeholderHeight+'px');
  e.dataTransfer.effectAllowed='move';
@@ -2825,7 +2827,7 @@ function summaryGroup(group,base,column){
  box.dataset.round=base;
  const title=dom('div','summary-group-head');
  if(summaryEditMode&&!highlighted){
-   title.append(summaryGrip('summary-round-grip','ラウンド全体をドラッグ',{type:'round',base}));
+   title.append(summaryGrip('summary-round-grip','サブラウンドを移動',{type:'round',base}));
  }
  if(summaryEditMode){
    box.ondragover=e=>{
@@ -2850,10 +2852,9 @@ function summaryGroup(group,base,column){
      if(summaryDrag?.type!=='round'||summaryDrag.base===base||highlighted)return;
      e.preventDefault();e.stopPropagation();
      const rect=box.getBoundingClientRect(),after=e.clientY>rect.top+rect.height/2;
-     // A round with multiple subrounds moves as one block. Show its gap
-     // before the first or after the last subround, never in the middle.
-     const groups=[...box.parentElement.children].filter(el=>el.classList.contains('summary-group')&&el.dataset.round===base);
-     summaryMarkDrop(after?groups[groups.length-1]:groups[0],after);
+     // Each subround has its own group and accepts insertion on either side,
+     // including between BB, DT and EX, or across unrelated rounds.
+     summaryMarkDrop(box,after);
    };
    box.ondrop=e=>{
      if(summaryDrag?.type==='record'){
@@ -2923,7 +2924,7 @@ function renderRecords(){
      }
    }
    if(summaryEditMode){
-     const end=dom('div','summary-column-end','ここへラウンドを移動');
+     const end=dom('div','summary-column-end','ここへサブラウンドを移動');
      end.ondragover=e=>{if(summaryDrag?.type!=='round')return;e.preventDefault();e.stopPropagation();summaryMarkDrop(end)};
      end.ondrop=e=>summaryDropOn(e,null,i);
      cols[i].append(end);
