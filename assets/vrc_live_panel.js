@@ -48,7 +48,7 @@ function orderedRounds(){
   if(sortBySurvival)rows.sort((a,b)=>survivalScore(b)-survivalScore(a));
   return rows;
 }
-function visibleRounds(){return orderedRounds().slice(0,60)}
+function visibleRounds(){return orderedRounds()}
 function updateSortButton(){
   sortButton.textContent=sortBySurvival?'生存優先':'最新順';
   sortButton.classList.toggle('on',sortBySurvival);
@@ -75,7 +75,7 @@ function renderRoundFilter(){
     tile.onclick=()=>{
       if(subrounds.length){expandedRound=expandedRound===round?'':round;}
       else{if(on)disabledRounds.add(round);else disabledRounds.delete(round);expandedRound='';}
-      renderRoundFilter();renderScan();
+      renderRoundFilter();renderScan({resetScroll:true});
     };
     roundFilterGrid.append(tile);
   }
@@ -84,7 +84,7 @@ function renderRoundFilter(){
     const tile=makeRoundTile(expandedRound,variant,on);
     tile.onclick=()=>{
       if(on)disabledRounds.add(key);else disabledRounds.delete(key);
-      renderRoundFilter();renderScan();
+      renderRoundFilter();renderScan({resetScroll:true});
     };
     roundFilterVariants.append(tile);
   }
@@ -135,17 +135,19 @@ function updateSelectedCount(){
   selectAll.disabled=valid.size===0;
   selectNone.disabled=selectedVisible===0;
 }
-function renderScan(){
+function renderScan({resetScroll=false}={}){
   const scan=typeof vrcLogScan!=='undefined'?vrcLogScan:null;
   const rounds=scan?.rounds||[],seen=importedKeys();
-  const sorted=orderedRounds(),visible=sorted.slice(0,60);
-  total.textContent=sorted.length+'件';
+  const visible=orderedRounds();
+  const previousScrollTop=resetScroll?0:items.scrollTop;
+  total.textContent=visible.length+'件';
   items.replaceChildren();
   if(!visible.length){
     const empty=document.createElement('div');empty.className='vrc-live-empty';
     empty.textContent=rounds.length?'表示中のラウンドがありません':scan?'ラウンドは未検出です':'ファイル読込でログを選択してください';
     items.append(empty);updateSelectedCount();return;
   }
+  const fragment=document.createDocumentFragment();
   for(const r of visible){
     const duplicate=seen.has(String(r.sourceLogKey||'').toLowerCase());
     const allowed=importable(r,seen),selected=selectedKeys.has(r.sourceLogKey);
@@ -236,15 +238,17 @@ function renderScan(){
     node.title=statusLabel;
     mapRow.append(people);
     body.append(headline,mapRow);
-    node.append(body);items.append(node);
+    node.append(body);fragment.append(node);
   }
+  items.append(fragment);
+  items.scrollTop=previousScrollTop;
   updateSelectedCount();
 }
 function publish(data,file){
   const previousFile=vrcLogScan?.file||'';
   if(previousFile&&previousFile!==file.name)selectedKeys.clear();
   vrcLogScan={...data,file:file.name};
-  renderScan();
+  renderScan({resetScroll:Boolean(previousFile&&previousFile!==file.name)});
 }
 function errorText(error){
   return error?.message||String(error||'不明なエラー');
@@ -448,7 +452,7 @@ showMappingStatus();
 manual.onclick=openLogFilePicker;
 sortButton.onclick=()=>{
   sortBySurvival=!sortBySurvival;
-  updateSortButton();renderScan();
+  updateSortButton();renderScan({resetScroll:true});
 };
 roundFilterButton.onclick=()=>{
   if(!roundFilterPopup.hidden){closeRoundFilter();return;}
