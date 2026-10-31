@@ -2045,7 +2045,142 @@ unboundSheet.onload=()=>{unboundSheetReady=true;recolorCache.clear();updateForm(
 unboundSheet.onerror=()=>notify('Unboundの画像を読み込めませんでした');
 unboundSheet.src='./assets/unbound_atlas.png';
 
-function renderSessions(){$('session').replaceChildren(...state.sessions.map(s=>{const o=dom('option','',s.name);o.value=s.id;return o}));$('session').value=state.active;$('sessionName').value=current().name;renderRecords()}
+/* Native <option> popup menus do not reliably support right-click.
+   Preserve the original select for existing change handlers. */
+let sessionMenuDeleteId=null;
+function closeSessionPicker(focusToggle=false){
+ const list=$('sessionPickerList'),toggle=$('sessionPickerToggle');
+ list.hidden=true;
+ toggle.setAttribute('aria-expanded','false');
+ sessionMenuDeleteId=null;
+ for(const button of list.querySelectorAll('.session-picker-delete'))button.hidden=true;
+ if(focusToggle)toggle.focus();
+}
+function openSessionPicker(focusCurrent=false){
+ const list=$('sessionPickerList'),toggle=$('sessionPickerToggle');
+ list.hidden=false;
+ toggle.setAttribute('aria-expanded','true');
+ if(focusCurrent){
+   const selected=[...list.querySelectorAll('.session-picker-option')]
+     .find(option=>option.dataset.sessionId===state.active);
+   selected?.focus();
+ }
+}
+function showSessionDelete(id){
+ sessionMenuDeleteId=id;
+ for(const row of $('sessionPickerList').querySelectorAll('.session-picker-option-row')){
+   row.querySelector('.session-picker-delete').hidden=row.dataset.sessionId!==id;
+ }
+}
+function deleteSessionById(id){
+ const target=state.sessions.find(session=>session.id===id);
+ if(!target)return false;
+ if(state.sessions.length===1){
+   notify('最後の周回は削除できません');return false;
+ }
+ if(!confirm('「'+target.name+'」と含まれる成果を削除しますか？'))return false;
+ const removedActive=state.active===id;
+ state.sessions=state.sessions.filter(session=>session.id!==id);
+ if(removedActive)state.active=state.sessions[0].id;
+ persist();
+ if(removedActive)clearForm();
+ renderSessions();
+ notify('周回「'+target.name+'」を削除しました');
+ return true;
+}
+function renderSessionPickerList(){
+ const list=$('sessionPickerList');
+ list.replaceChildren();
+ for(const session of state.sessions){
+   const row=dom('div','session-picker-option-row');
+   row.dataset.sessionId=session.id;
+   const option=dom('button','session-picker-option',session.name);
+   option.type='button';
+   option.dataset.sessionId=session.id;
+   option.title=session.name;
+   option.setAttribute('role','option');
+   option.setAttribute('aria-selected',String(session.id===state.active));
+   option.onclick=()=>{
+     closeSessionPicker();
+     if(session.id!==state.active){
+       $('session').value=session.id;
+       $('session').dispatchEvent(new Event('change',{bubbles:true}));
+     }
+   };
+   row.oncontextmenu=event=>{
+     event.preventDefault();event.stopPropagation();
+     showSessionDelete(session.id);
+   };
+   const deleteButton=dom('button','session-picker-delete','削除');
+   deleteButton.type='button';
+   deleteButton.hidden=sessionMenuDeleteId!==session.id;
+   deleteButton.setAttribute('aria-label','周回「'+session.name+'」を削除');
+   deleteButton.onclick=event=>{
+     event.stopPropagation();
+     deleteSessionById(session.id);
+   };
+   row.append(option,deleteButton);
+   list.append(row);
+ }
+}
+function renderSessions(){
+ const select=$('session');
+ select.replaceChildren(...state.sessions.map(session=>{
+   const option=dom('option','',session.name);
+   option.value=session.id;
+   return option;
+ }));
+ select.value=state.active;
+ $('sessionName').value=current().name;
+ $('sessionPickerName').textContent=current().name;
+ $('sessionPickerToggle').title=current().name;
+ closeSessionPicker();
+ renderSessionPickerList();
+ renderRecords();
+}
+function initSessionPicker(){
+ const picker=$('sessionPicker'),toggle=$('sessionPickerToggle'),list=$('sessionPickerList');
+ toggle.onclick=()=>{
+   if(list.hidden)openSessionPicker();
+   else closeSessionPicker();
+ };
+ // Right-click the collapsed button to offer deleting the active session.
+ toggle.oncontextmenu=event=>{
+   event.preventDefault();
+   openSessionPicker();
+   showSessionDelete(state.active);
+ };
+ function moveFocus(key){
+   const choices=[...list.querySelectorAll('.session-picker-option')];
+   if(!choices.length)return;
+   let index=choices.indexOf(document.activeElement);
+   if(index<0)index=choices.findIndex(x=>x.dataset.sessionId===state.active);
+   if(key==='Home')index=0;
+   else if(key==='End')index=choices.length-1;
+   else index=(index+(key==='ArrowUp'?-1:1)+choices.length)%choices.length;
+   choices[Math.max(0,index)].focus();
+ }
+ toggle.addEventListener('keydown',event=>{
+   if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){
+     event.preventDefault();openSessionPicker();moveFocus(event.key);
+   }
+ });
+ list.addEventListener('keydown',event=>{
+   if(['ArrowDown','ArrowUp','Home','End'].includes(event.key)){
+     event.preventDefault();moveFocus(event.key);
+   }else if(event.key==='Escape'){
+     event.preventDefault();closeSessionPicker(true);
+   }
+ });
+ document.addEventListener('pointerdown',event=>{
+   if(!picker.contains(event.target)&&!list.hidden)closeSessionPicker();
+ });
+ document.addEventListener('keydown',event=>{
+   if(event.key==='Escape'&&!list.hidden){
+     event.preventDefault();closeSessionPicker(true);
+   }
+ });
+}
 function currentMax(){return form.round==='Bloodbath'?(form.variant==='EX'?1:form.variant==='DT'?2:3):form.round==='Midnight'?3:form.round==='Moon'||disableTerrorSelection()?0:form.round==='Unbound'?1:1}
 function updateForm(){
  const r=$('roundButton');
@@ -2954,7 +3089,7 @@ $('roundButton').onclick=()=>choose('round');$('terrorButton').onclick=()=>choos
    button.addEventListener('click',()=>stepPlayerCount(id,Number(button.dataset.delta)));
 }
 $('addEntry').onclick=commit;$('cancelEdit').onclick=clearForm;$('search').oninput=renderRecords;
-$('addSession').onclick=()=>{let s={id:uid(),name:'周回 '+(state.sessions.length+1),records:[]};state.sessions.push(s);state.active=s.id;persist();clearForm();renderSessions()};$('deleteSession').onclick=()=>{if(state.sessions.length===1){notify('最後の周回は削除できません');return}if(!confirm('この周回と含まれる成果を削除しますか？'))return;state.sessions=state.sessions.filter(s=>s.id!==state.active);state.active=state.sessions[0].id;persist();clearForm();renderSessions()};$('session').onchange=e=>{state.active=e.target.value;clearForm();persist();renderSessions()};$('sessionName').onchange=e=>{let s=e.target.value.trim();if(!s){e.target.value=current().name;return}current().name=s;persist();renderSessions()};$('listView').onclick=()=>{state.mode='text';persist();renderRecords()};$('iconView').onclick=()=>{state.mode='icon';persist();renderRecords()};
+$('addSession').onclick=()=>{let s={id:uid(),name:'周回 '+(state.sessions.length+1),records:[]};state.sessions.push(s);state.active=s.id;persist();clearForm();renderSessions()};$('deleteSession').onclick=()=>deleteSessionById(state.active);$('session').onchange=e=>{if(!state.sessions.some(s=>s.id===e.target.value))return;state.active=e.target.value;clearForm();persist();renderSessions()};$('sessionName').onchange=e=>{let s=e.target.value.trim();if(!s){e.target.value=current().name;return}current().name=s;persist();renderSessions()};$('listView').onclick=()=>{state.mode='text';persist();renderRecords()};$('iconView').onclick=()=>{state.mode='icon';persist();renderRecords()};
 
 /* Backward-compatible importer for the original .NET ToNRoundRecords DataFile.
    Never rewrite the source file; convert a copy only after user confirmation. */
@@ -3100,6 +3235,7 @@ $('vrcLogFile').onchange=async e=>{
  finally{e.target.value=''}
 };
 
+initSessionPicker();
 updateForm();renderSessions();
 
 /* The original 1150px-wide window looked miniature on a full-screen monitor.
