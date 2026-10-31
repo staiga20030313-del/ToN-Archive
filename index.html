@@ -1408,36 +1408,64 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 .vrc-round-filter-options .vrc-round-duration-filter>label:last-child{font-size:12px;white-space:nowrap;cursor:pointer}
 .vrc-round-filter-options .vrc-round-duration-filter input[type=number]:disabled{opacity:.45;cursor:not-allowed}
 
-/* Summary reorder: a moved item collapses at its source. Its exact measured
-   height is animated open at the insertion edge (rows, groups or column end). */
+/* Drag reorder: the moving record vanishes from its old position while a
+   blank, borderless insertion slot opens between existing results.
+   Only a short neutral guide line is drawn in the slot—never a second frame. */
 .results-workspace #records.summary-editing .summary-drag-source{display:none!important}
-.results-workspace #records.summary-editing .summary-record,
-.results-workspace #records.summary-editing .summary-group,
-.results-workspace #records.summary-editing .summary-column-end{
- transition:margin-top .18s ease,margin-bottom .18s ease,padding .18s ease!important;
+.results-workspace #records.summary-editing .summary-drop-target,
+.results-workspace #records.summary-editing .summary-column-end.summary-drop-target{
+ outline:none!important;box-shadow:none!important;
 }
 .results-workspace #records.summary-editing .summary-record.summary-drop-target{
+ margin-top:0!important;margin-bottom:0!important;
  padding-top:1px!important;padding-bottom:1px!important;
 }
-.results-workspace #records.summary-editing .summary-record.summary-drop-target:not(.summary-drop-after){
- margin-top:var(--summary-drag-gap,34px)!important;
-}
-.results-workspace #records.summary-editing .summary-record.summary-drop-after{
- margin-bottom:var(--summary-drag-gap,34px)!important;
-}
-.results-workspace #records.summary-editing .summary-group.summary-drop-target:not(.summary-drop-after){
- margin-top:var(--summary-drag-gap,60px)!important;
-}
-.results-workspace #records.summary-editing .summary-group.summary-drop-after{
- margin-bottom:var(--summary-drag-gap,60px)!important;
+.results-workspace #records.summary-editing .summary-group.summary-drop-target{
+ margin-top:0!important;margin-bottom:0!important;
 }
 .results-workspace #records.summary-editing .summary-column-end.summary-drop-target{
- margin-top:var(--summary-drag-gap,60px)!important;
+ margin-top:0!important;
+}
+.results-workspace #records.summary-editing .summary-insert-placeholder{
+ display:block!important;position:relative!important;
+ box-sizing:border-box!important;
+ flex:0 0 auto!important;
+ width:calc(100% - 39px);margin:0 4px 0 35px!important;
+ height:0;min-height:0;opacity:0;
+ padding:0!important;border:0!important;outline:0!important;
+ background:transparent!important;box-shadow:none!important;
+ pointer-events:auto;
+ transition:height .15s ease,opacity .15s ease!important;
+}
+.results-workspace #records.summary-editing .summary-column>.summary-insert-placeholder{
+ width:calc(100% - 4px);margin:0 2px!important;
+}
+.results-workspace #records.summary-editing .summary-insert-placeholder.active{
+ height:var(--summary-drag-gap,34px)!important;
+ opacity:1;
+}
+.results-workspace #records.summary-editing .summary-insert-placeholder::after{
+ content:"";position:absolute;left:10px;right:10px;top:50%;
+ border-top:1px dashed #888;pointer-events:none;
+}
+.results-workspace #records.summary-editing .summary-grip{
+ cursor:grab!important;min-height:26px;min-width:20px;
+ opacity:.7;transition:opacity .12s ease,color .12s ease;
+}
+.results-workspace #records.summary-editing .summary-grip:hover,
+.results-workspace #records.summary-editing .summary-grip:focus-visible{
+ color:#f0f0f0!important;opacity:1;
+}
+.results-workspace #records.summary-editing .summary-record-grip{
+ left:-28px!important;width:21px!important;height:28px!important;
+ top:calc(50% - 14px)!important;
+}
+.results-workspace #records.summary-editing .summary-round-grip{
+ width:22px!important;height:27px!important;
 }
 @media(prefers-reduced-motion:reduce){
- .results-workspace #records.summary-editing .summary-record,
- .results-workspace #records.summary-editing .summary-group,
- .results-workspace #records.summary-editing .summary-column-end{transition:none!important}
+ .results-workspace #records.summary-editing .summary-insert-placeholder,
+ .results-workspace #records.summary-editing .summary-grip{transition:none!important}
 }
 
 /* Top-aligned VRC detector: reserve the right rail starting at the page top.
@@ -2273,7 +2301,7 @@ function remove(id){current().records=current().records.filter(r=>r.id!==id);if(
    Two independent vertical columns, round-colored frames, compact icon entries,
    top Highlights, inline editing, and distinct round / record drag handles. */
 let summaryEditMode=false,summaryDrag=null,summaryContextRecord=null;
-let summaryDragSourceNodes=[];
+let summaryDragSourceNodes=[],summaryDropPlaceholder=null;
 const summaryRoundImage=new Image();
 let summaryRoundImageReady=false;
 const summaryRoundPalette=new Map();
@@ -2388,18 +2416,42 @@ function summaryClearIndicators(){
  document.querySelectorAll('#records .summary-drop-target,#records .summary-drop-after').forEach(x=>{
    x.classList.remove('summary-drop-target','summary-drop-after');
  });
+ if(summaryDropPlaceholder){
+   summaryDropPlaceholder.remove();
+   summaryDropPlaceholder=null;
+ }
 }
 function summaryMarkDrop(element,after=false){
- // After the pointer reaches a valid destination, the source can collapse
- // without cancelling Chromium's native drag. Hiding it during dragstart
- // instead cancels the drag before the destination can receive a drop.
- for(const source of summaryDragSourceNodes)source.classList.add('summary-drag-source');
- // Avoid restarting the margin animation on repeated dragover events.
- if(element.classList.contains('summary-drop-target')&&
+ if(!summaryDrag||!element||!element.parentElement)return;
+ // Keep a single neutral insertion slot rather than drawing a second border
+ // around the record being hovered. Native drops also work over the slot itself.
+ if(summaryDropPlaceholder?.isConnected&&element.classList.contains('summary-drop-target')&&
     element.classList.contains('summary-drop-after')===after)return;
  summaryClearIndicators();
+ // Collapse the origin only after entering an allowed target (native dragstart
+ // cancellation occurs if its source disappears immediately).
+ for(const source of summaryDragSourceNodes)source.classList.add('summary-drag-source');
+ const slot=document.createElement('div');
+ slot.className='summary-insert-placeholder';
+ slot.setAttribute('aria-hidden','true');
+ const col=Number(element.closest('.summary-column')?.dataset.column);
+ const destination=element.classList.contains('summary-record')
+   ?{id:element.dataset.id,after}
+   :element.classList.contains('summary-column-end')
+     ?null:{base:element.dataset.round,after};
+ slot.ondragover=e=>{
+   if(!summaryDrag)return;
+   e.preventDefault();e.stopPropagation();
+   e.dataTransfer.dropEffect='move';
+ };
+ slot.ondrop=e=>summaryDropOn(e,destination,col);
+ element.parentElement.insertBefore(slot,after?element.nextSibling:element);
+ summaryDropPlaceholder=slot;
  element.classList.add('summary-drop-target');
  if(after)element.classList.add('summary-drop-after');
+ requestAnimationFrame(()=>{
+   if(summaryDropPlaceholder===slot&&summaryDrag)slot.classList.add('active');
+ });
 }
 function summaryFinishDrag(){
  summaryDrag=null;
