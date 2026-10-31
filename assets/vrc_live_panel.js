@@ -30,10 +30,12 @@ const sortButton=byId('vrcLiveSort'),roundFilterButton=byId('vrcLiveRoundFilterT
       excludeSecondsInput=byId('vrcLiveExcludeSeconds');
 const disabledRounds=new Set();
 const DURATION_FILTER_KEY='ton-archive-vrc-exclude-seconds';
-let excludeSeconds=null;
+// First launch defaults to 170 seconds. An explicitly empty saved value disables filtering.
+let excludeSeconds=170;
 try{
   const saved=localStorage.getItem(DURATION_FILTER_KEY);
-  if(saved!==null&&saved.trim()!==''){
+  if(saved==='')excludeSeconds=null;
+  else if(saved!==null){
     const value=Number(saved);
     if(Number.isSafeInteger(value)&&value>=0)excludeSeconds=value;
   }
@@ -45,8 +47,7 @@ excludeSecondsInput.addEventListener('input',()=>{
   if(value!==null&&(!Number.isSafeInteger(value)||value<0))return;
   excludeSeconds=value;
   try{
-    if(value===null)localStorage.removeItem(DURATION_FILTER_KEY);
-    else localStorage.setItem(DURATION_FILTER_KEY,String(value));
+    localStorage.setItem(DURATION_FILTER_KEY,value===null?'':String(value));
   }catch{}
   renderScan({resetScroll:true});
 });
