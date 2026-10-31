@@ -28,9 +28,21 @@ const sortButton=byId('vrcLiveSort'),roundFilterButton=byId('vrcLiveRoundFilterT
       roundFilterGrid=byId('vrcLiveRoundFilterGrid'),
       roundFilterVariants=byId('vrcLiveRoundFilterVariants'),
       excludeSecondsInput=byId('vrcLiveExcludeSeconds'),
+      excludeSecondsEnabledInput=byId('vrcLiveExcludeSecondsEnabled'),
       excludeNoSurvivorsInput=byId('vrcLiveExcludeNoSurvivors');
 const disabledRounds=new Set();
 const DURATION_FILTER_KEY='ton-archive-vrc-exclude-seconds';
+const DURATION_FILTER_ENABLED_KEY='ton-archive-vrc-exclude-seconds-enabled';
+let excludeSecondsEnabled=true;
+try{excludeSecondsEnabled=localStorage.getItem(DURATION_FILTER_ENABLED_KEY)!=='false'}catch{}
+excludeSecondsEnabledInput.checked=excludeSecondsEnabled;
+excludeSecondsInput.disabled=!excludeSecondsEnabled;
+excludeSecondsEnabledInput.addEventListener('change',()=>{
+  excludeSecondsEnabled=excludeSecondsEnabledInput.checked;
+  excludeSecondsInput.disabled=!excludeSecondsEnabled;
+  try{localStorage.setItem(DURATION_FILTER_ENABLED_KEY,String(excludeSecondsEnabled))}catch{}
+  renderScan({resetScroll:true});
+});
 const NO_SURVIVORS_FILTER_KEY='ton-archive-vrc-exclude-zero-survivors';
 let excludeNoSurvivors=false;
 try{excludeNoSurvivors=localStorage.getItem(NO_SURVIVORS_FILTER_KEY)==='true'}catch{}
@@ -70,7 +82,7 @@ function roundAllowed(r){
   if(excludeNoSurvivors&&r.estimatedSurvivors===0)return false;
   // Filter only rounds with a known elapsed time. Keep ongoing/unknown rounds visible.
   // Match the integer-second display used in the detected-round cards.
-  if(excludeSeconds!==null&&Number.isFinite(r.durationSeconds)&&
+  if(excludeSecondsEnabled&&excludeSeconds!==null&&Number.isFinite(r.durationSeconds)&&
      r.durationSeconds>=0&&Math.floor(r.durationSeconds)<=excludeSeconds)return false;
   if(!r.round)return true;
   if(r.round==='Sabotage'&&!r.variant)return ['Sabotage 1','Sabotage 2'].some(v=>!disabledRounds.has('Sabotage/'+v));
