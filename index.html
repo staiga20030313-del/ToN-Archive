@@ -1439,6 +1439,79 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
  .results-workspace #records.summary-editing .summary-group,
  .results-workspace #records.summary-editing .summary-column-end{transition:none!important}
 }
+
+/* Top-aligned VRC detector: reserve the right rail starting at the page top.
+   The title, session controls, preview, editor and results occupy the left
+   region without overlapping the detector. */
+.shell{
+ display:grid!important;
+ grid-template-columns:minmax(0,5fr) minmax(205px,1fr)!important;
+ grid-template-rows:auto minmax(0,1fr)!important;
+ grid-template-areas:"header log" "workspace log"!important;
+ gap:0 10px!important;
+ align-items:start!important;
+}
+.shell>.archive-header{grid-area:header;min-width:0;width:100%}
+.shell>.archive-workspace{
+ grid-area:workspace;min-width:0;width:100%;
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) minmax(0,4fr)!important;
+ grid-template-areas:"preview preview" "entry results"!important;
+ grid-template-rows:auto minmax(0,1fr)!important;
+ gap:10px!important;
+ align-items:start!important;
+}
+.shell>.archive-workspace>.preview-panel{grid-area:preview}
+.shell>.archive-workspace>.entry-panel{grid-area:entry}
+.shell>.archive-workspace>.results-workspace{grid-area:results}
+.shell>.vrc-live-panel{
+ grid-area:log;position:sticky!important;top:0!important;
+ align-self:start!important;min-width:0;
+ width:100%!important;
+ height:100dvh!important;max-height:100dvh!important;
+ min-height:0!important;margin:0!important;
+ display:flex!important;flex-direction:column!important;overflow:hidden!important;
+}
+.shell>.vrc-live-panel .vrc-live-select-actions{
+ flex:0 0 auto;margin:2px 0 4px;padding:5px 0 3px;
+ border-top:1px solid #404040;
+}
+.shell>.vrc-live-panel .vrc-live-import{
+ flex:0 0 auto;margin:0 0 7px;width:100%;
+}
+.shell>.vrc-live-panel .vrc-live-rounds{
+ flex:1 1 0%!important;min-height:0!important;
+ overflow-y:auto!important;overflow-x:hidden!important;
+ overscroll-behavior-y:contain;scrollbar-gutter:stable;
+}
+.shell>.vrc-live-panel .vrc-live-rounds>.vrc-live-round{flex:0 0 auto!important}
+@media(max-width:1100px) and (min-width:851px){
+ .shell{grid-template-columns:minmax(0,1fr) minmax(195px,24%)!important}
+ .shell>.archive-header .headline{flex-wrap:wrap!important;gap:7px!important}
+ .shell>.archive-header .session-row{justify-content:flex-start!important;flex-wrap:wrap!important}
+}
+@media(max-width:850px){
+ /* On a narrow screen, retain the full log panel at the very top instead
+    of squeezing the records workspace and its existing buttons. */
+ .shell{
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:auto auto auto!important;
+  grid-template-areas:"log" "header" "workspace"!important;
+  gap:10px 0!important;
+ }
+ .shell>.vrc-live-panel{
+  position:relative!important;top:auto!important;
+  height:min(60dvh,540px)!important;max-height:min(60dvh,540px)!important;
+ }
+ .shell>.archive-header .headline{flex-wrap:wrap!important;gap:8px!important}
+ .shell>.archive-workspace{
+  display:flex!important;flex-direction:column!important;
+  gap:10px!important;
+ }
+ .shell>.archive-workspace>.preview-panel,
+ .shell>.archive-workspace>.entry-panel,
+ .shell>.archive-workspace>.results-workspace{width:100%!important}
+}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.71">v1.0.71</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
@@ -1463,6 +1536,8 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 
  <section class="panel records-panel"><div class="headline"><div><h2>成果まとめ <span class="pill" id="recordCount">0</span></h2></div><div class="list-tools"><div class="utility-row"><button class="danger" id="deleteSession">周回を削除</button><button id="export">JSONを書き出す</button><button id="importButton">JSONを読み込む</button><input accept=".json,application/json" hidden="" id="importFile" type="file"/><button id="vrcLogButton" title="VRChatのoutput_log_*.txtをローカルで解析">VRCログ</button><input id="vrcLogFile" type="file" accept=".txt,text/plain" hidden/></div><input aria-label="記録を検索" class="field" id="search" placeholder="記録を検索" style="max-width:200px"/><button class="chip on" id="listView">テキスト</button><button class="chip" id="iconView">アイコン形式</button></div></div><div class="records" id="records"></div></section>
 </div>
+
+</div>
 <aside class="panel vrc-live-panel" id="vrcLivePanel" aria-label="VRChatログ監視">
  <div class="vrc-live-head"><strong>VRCログ</strong><button type="button" id="vrcLiveManual">ファイル読込</button><span id="vrcLiveStatus" role="status" aria-live="polite" data-state="idle">未接続</span></div>
  <div class="vrc-live-controls"><button type="button" id="vrcLiveConnect">フォルダ接続</button></div>
@@ -1478,12 +1553,11 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
   <button type="button" id="vrcLiveRoundFilterToggle" aria-expanded="false" aria-controls="vrcLiveRoundFilter">条件を絞る</button>
  </div>
  <div class="vrc-live-section"><strong>検出ラウンド <span id="vrcLiveCount">0件</span></strong><button type="button" id="vrcLiveRefresh">更新</button></div>
- <div id="vrcLiveRounds" class="vrc-live-rounds" aria-live="polite"><div class="vrc-live-empty">ログを接続すると検出結果が表示されます</div></div>
  <div class="vrc-live-select-actions"><button type="button" id="vrcLiveSelectAll">全選択</button><button type="button" id="vrcLiveSelectNone">解除</button><span id="vrcLiveSelectedCount">0件選択</span></div>
  <button type="button" class="primary vrc-live-import" id="vrcLiveImport" disabled>選択した成果を追加</button>
+ <div id="vrcLiveRounds" class="vrc-live-rounds" aria-live="polite"><div class="vrc-live-empty">ログを接続すると検出結果が表示されます</div></div>
  <div class="vrc-live-note">チェックしたラウンドを成果に追加します。人数は推定値です。</div>
 </aside>
-</div>
 </main>
 <div id="vrcLiveRoundFilter" class="vrc-round-filter-popover" hidden role="group" aria-label="ログに表示するラウンド">
  <div class="vrc-round-filter-head"><strong>ラウンド表示切替</strong><button type="button" id="vrcLiveRoundFilterClose" aria-label="閉じる">×</button></div>
