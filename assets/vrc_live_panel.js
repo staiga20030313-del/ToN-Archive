@@ -17,7 +17,7 @@ const PREFIX='output_log_';
 const LIMIT=75*1024*1024;
 const PERIOD=12000;
 let directory=null,timer=null,scanning=false,lastSignature='',previousFile='';
-let connected=false;
+let connected=false,activeLogSource='',refreshPending=false;
 let savedStartFolder=null,lastPickedLog=null;
 const selectedKeys=new Set();
 // Matches the native LogRoundFilterPanel: all enabled by default, each round
@@ -295,11 +295,12 @@ function renderScan({resetScroll=false}={}){
   items.scrollTop=previousScrollTop;
   updateSelectedCount();
 }
-function publish(data,file){
+function publish(data,file,source='manual'){
   const filename=file?.name||data?.file||'';
   const previousFile=vrcLogScan?.file||'';
   if(previousFile&&previousFile!==filename)selectedKeys.clear();
-  vrcLogScan={...data,file:filename};
+  activeLogSource=source;
+  vrcLogScan={...data,file:filename,sourceType:source};
   renderScan({resetScroll:Boolean(previousFile&&previousFile!==filename)});
   // Keep the analyzed round list locally so reloading the site does not
   // depend on browsers retaining direct file-system permissions.
@@ -309,7 +310,11 @@ function errorText(error){
   return error?.message||String(error||'不明なエラー');
 }
 async function poll(force=false){
-  if(!directory||scanning)return;
+  if(!directory)return;
+  if(scanning){
+    if(force)refreshPending=true;
+    return;
+  }
   scanning=true;
   try{
     const found=[];
@@ -334,21 +339,27 @@ async function poll(force=false){
     if(!window.TON_VRC_LOG)throw Error('ログ解析機能が未読込です');
     const data=window.TON_VRC_LOG.analyze(await file.text(),file.name,MAP_DATA);
     lastSignature=signature;previousFile=file.name;
-    publish(data,file);
+    publish(data,file,'directory');
     setStatus('監視中 · '+data.rounds.length+'ラウンド','watching');
   }catch(error){
     setStatus('読込エラー','error');details.textContent=errorText(error);
-  }finally{scanning=false}
+  }finally{
+    scanning=false;
+    if(refreshPending){
+      refreshPending=false;
+      void poll(true);
+    }
+  }
 }
 function stop(){
   if(timer){clearInterval(timer);timer=null}
 }
 function start(){
   stop();
-  connected=true;connect.textContent='フォルダ変更';
+  connected=true;activeLogSource='directory';connect.textContent='フォルダ変更';
   setStatus('解析中','watching');
   void poll(true);
-  timer=setInterval(()=>{if(!document.hidden)void poll()},PERIOD);
+  timer=setInterval(()=>{if(!document.hidden&&activeLogSource==='directory')void poll()},PERIOD);
 }
 // Store directory/file handles and the latest parsed scan in the existing
 // IndexedDB database. No raw VRChat log text is saved or uploaded.
@@ -412,6 +423,7 @@ async function restoreLastLog(){
   const cached=await restoreAccessValue('last-scan');
   if(cached?.version===1&&Array.isArray(cached.scan?.rounds)&&!vrcLogScan){
     vrcLogScan=cached.scan;
+    activeLogSource=vrcLogScan.sourceType||'';
     previousFile=vrcLogScan.file||'';
     window.TON_VRC_LOG?.applyMappingsToScan?.(vrcLogScan);
     details.textContent=(vrcLogScan.file||'前回のログ')+' · 前回の検出結果';
@@ -422,34 +434,42 @@ async function restoreLastLog(){
   // and the cached results should remain visible when permission expires.
   savedStartFolder=await restoreAccessValue('vrc');
   lastPickedLog=await restoreAccessValue('last-file');
-  if(savedStartFolder&&typeof window.showDirectoryPicker==='function'){
+  // Prefer the last source actually displayed. A previously saved folder
+  // must never replace a more recent manually selected file on reload.
+  const tryFolder=async()=>{
+    if(!savedStartFolder||typeof window.showDirectoryPicker!=='function')return false;
     try{
       const permission=typeof savedStartFolder.queryPermission==='function'
         ?await savedStartFolder.queryPermission({mode:'read'}):'prompt';
       if(permission==='granted'){
         directory=savedStartFolder;
         start();
-        return;
+        return true;
       }
     }catch{}
-  }
-  // Files selected via showOpenFilePicker can also be re-read automatically
-  // when the browser still grants access, even without a folder connection.
-  if(lastPickedLog&&typeof window.showOpenFilePicker==='function'){
+    return false;
+  };
+  const tryFile=async()=>{
+    if(!lastPickedLog||typeof window.showOpenFilePicker!=='function')return false;
     try{
       const permission=typeof lastPickedLog.queryPermission==='function'
         ?await lastPickedLog.queryPermission({mode:'read'}):'prompt';
       if(permission==='granted'){
-        const file=await lastPickedLog.getFile();
-        if(file.size<=50*1024*1024&&window.TON_VRC_LOG){
-          const data=window.TON_VRC_LOG.analyze(await file.text(),file.name,MAP_DATA);
-          publish(data,file);
-          details.textContent=file.name;
-          setStatus('前回ファイルを再読込 · '+data.rounds.length+'ラウンド','idle');
-          return;
-        }
+        await readLogFileHandle(lastPickedLog,'前回ファイルを再読込');
+        return true;
       }
-    }catch{/* Keep the saved round list when the original file is unavailable. */}
+    }catch{/* Keep the previous round list if the source is unavailable. */}
+    return false;
+  };
+  if(activeLogSource==='manual'){
+    // A regular file input supplies a snapshot, not a re-openable file handle.
+  }else if(activeLogSource==='file'){
+    if(await tryFile())return;
+  }else if(activeLogSource==='directory'){
+    if(await tryFolder())return;
+  }else{
+    // Legacy cached scans predate source tracking.
+    if(await tryFolder()||await tryFile())return;
   }
   if(vrcLogScan){
     if(savedStartFolder||lastPickedLog){
@@ -486,6 +506,79 @@ connect.onclick=async()=>{
     }
   }
 };
+async function readLogFileHandle(handle,label='ファイル読込済み'){
+  if(!window.TON_VRC_LOG)throw Error('ログ解析機能が未読込です');
+  const file=await handle.getFile();
+  if(!/^output_log_.*\.txt$/i.test(file.name))throw Error('output_log_*.txt を選択してください');
+  if(file.size>50*1024*1024)throw Error('ログが50MBを超えています');
+  const data=window.TON_VRC_LOG.analyze(await file.text(),file.name,MAP_DATA);
+  // A manually selected file takes precedence over a previously connected
+  // folder until the user reconnects the folder.
+  stop();
+  connected=false;
+  lastPickedLog=handle;
+  void saveAccessValue('last-file',handle);
+  publish(data,file,'file');
+  details.textContent=file.name+' · '+humanTime(file.lastModified);
+  setStatus(label+' · '+data.rounds.length+'ラウンド','idle');
+  return data;
+}
+async function refreshLatestLog(){
+  if(reload.disabled)return;
+  reload.disabled=true;
+  try{
+    // A folder connection follows the newest output_log_*.txt on disk.
+    // Force analysis even when file size and last-modified time did not change.
+    if(activeLogSource==='directory'||(!activeLogSource&&(directory||savedStartFolder))){
+      const handle=directory||savedStartFolder;
+      if(handle){
+        const permission=typeof handle.requestPermission==='function'
+          ?await handle.requestPermission({mode:'read'})
+          :typeof handle.queryPermission==='function'
+            ?await handle.queryPermission({mode:'read'}):'granted';
+        if(permission!=='granted'){
+          setStatus('フォルダの再接続が必要','idle');
+          details.textContent='フォルダ接続を押して読み取りを許可してください';
+          return;
+        }
+        directory=handle;savedStartFolder=handle;
+        if(!connected){start();return}
+        setStatus('最新ログを再読込中','watching');
+        await poll(true);
+        return;
+      }
+      // Stored permissions may have been cleared; picking a folder requires
+      // a user gesture, so leave the existing displayed rounds intact.
+      setStatus('フォルダの再接続が必要','idle');
+      details.textContent='フォルダ接続から前回のログフォルダを選択してください';
+      return;
+    }
+    // Re-read the actual selected file handle rather than only repainting
+    // the previous scan. A File from <input type=file> cannot be refreshed.
+    if(activeLogSource==='file'||(!activeLogSource&&lastPickedLog)){
+      if(lastPickedLog){
+        const permission=typeof lastPickedLog.requestPermission==='function'
+          ?await lastPickedLog.requestPermission({mode:'read'})
+          :typeof lastPickedLog.queryPermission==='function'
+            ?await lastPickedLog.queryPermission({mode:'read'}):'granted';
+        if(permission==='granted'){
+          setStatus('選択中のログを再読込中','idle');
+          await readLogFileHandle(lastPickedLog,'ファイル更新済み');
+          return;
+        }
+      }
+    }
+    // A plain <input type=file> has no durable disk handle. Re-selecting
+    // the file is the only way to obtain updated contents.
+    setStatus('ログを再選択してください','idle');
+    openLogFilePicker();
+  }catch(error){
+    setStatus('ログ更新失敗','error');
+    details.textContent=errorText(error);
+  }finally{
+    reload.disabled=false;
+  }
+}
 function openLogFilePicker(){
   if(!window.TON_VRC_LOG){
     setStatus('ログ解析機能が未読込です','error');return;
@@ -509,15 +602,7 @@ function openLogFilePicker(){
   catch(error){setStatus('ファイル選択エラー','error');details.textContent=errorText(error);return}
   void request.then(async handles=>{
     const handle=handles?.[0];if(!handle)return;
-    const file=await handle.getFile();
-    if(!/^output_log_.*\.txt$/i.test(file.name))throw Error('output_log_*.txt を選択してください');
-    if(file.size>50*1024*1024)throw Error('ログが50MBを超えています');
-    const data=window.TON_VRC_LOG.analyze(await file.text(),file.name,MAP_DATA);
-    lastPickedLog=handle;
-    void saveAccessValue('last-file',handle);
-    publish(data,file);
-    details.textContent=file.name;
-    setStatus(directory?'監視中':'ファイル読込済み',directory?'watching':'idle');
+    await readLogFileHandle(handle);
   }).catch(error=>{
     if(error?.name==='AbortError')return;
     setStatus('ファイル読込エラー','error');details.textContent=errorText(error);
@@ -597,9 +682,9 @@ window.addEventListener('scroll',()=>{if(!roundFilterPopup.hidden)placeRoundFilt
 updateSortButton();
 // Keep the existing results-panel VRCログ button on the same picker behavior.
 byId('vrcLogButton').onclick=openLogFilePicker;
-reload.onclick=()=>{if(directory)void poll(true);else if(vrcLogScan)renderScan()};
+reload.onclick=()=>{void refreshLatestLog()};
 
-document.addEventListener('visibilitychange',()=>{if(!document.hidden&&directory)void poll()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&directory&&activeLogSource==='directory')void poll()});
 window.TON_VRC_PANEL={renderScan,loadScan:publish,refreshMappingStatus:showMappingStatus};
 // Canvas map labels and terror colors must refresh after their atlases/fonts load.
 for(const atlas of [
