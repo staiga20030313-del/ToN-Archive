@@ -1366,6 +1366,20 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 .archive-workspace>.vrc-live-panel .vrc-live-rounds>.vrc-live-round{
  flex-shrink:0!important;
 }
+
+/* Duration threshold above the VRC round-selector icons. An empty field disables filtering. */
+.vrc-round-filter-popover{max-height:min(330px,calc(100vh - 20px))}
+.vrc-round-duration-filter{
+ display:flex;align-items:center;gap:7px;
+ margin:0 0 9px;padding:0;color:#ddd;font-size:12px;
+}
+.vrc-round-duration-filter input{
+ box-sizing:border-box;flex:0 0 74px;width:74px;min-width:0;
+ height:29px;padding:3px 6px;background:#050505;color:#eee;
+ border:1px solid #666;border-radius:2px;font:inherit;
+ font-variant-numeric:tabular-nums;
+}
+.vrc-round-duration-filter input:focus-visible{outline:1px solid #bbb;outline-offset:1px}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.62">v1.0.62</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
@@ -1414,6 +1428,7 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 </main>
 <div id="vrcLiveRoundFilter" class="vrc-round-filter-popover" hidden role="group" aria-label="ログに表示するラウンド">
  <div class="vrc-round-filter-head"><strong>ラウンド表示切替</strong><button type="button" id="vrcLiveRoundFilterClose" aria-label="閉じる">×</button></div>
+ <label class="vrc-round-duration-filter" for="vrcLiveExcludeSeconds"><input type="number" min="0" step="1" inputmode="numeric" id="vrcLiveExcludeSeconds" placeholder="秒数" autocomplete="off" aria-label="除外するラウンドの秒数（空欄で無効）"><span>秒以下は除外</span></label>
  <div class="vrc-round-filter-grid" id="vrcLiveRoundFilterGrid"></div>
  <div class="vrc-round-filter-variants" id="vrcLiveRoundFilterVariants"></div>
 </div>
