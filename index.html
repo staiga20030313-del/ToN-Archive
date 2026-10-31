@@ -2274,10 +2274,13 @@ function summaryClearIndicators(){
  });
 }
 function summaryMarkDrop(element,after=false){
- // Avoid resetting the same margin on every dragover event: the gap animates
- // only when the destination changes.
- if(element.classList.contains('summary-drop-target')===
-    true&&element.classList.contains('summary-drop-after')===after)return;
+ // After the pointer reaches a valid destination, the source can collapse
+ // without cancelling Chromium's native drag. Hiding it during dragstart
+ // instead cancels the drag before the destination can receive a drop.
+ for(const source of summaryDragSourceNodes)source.classList.add('summary-drag-source');
+ // Avoid restarting the margin animation on repeated dragover events.
+ if(element.classList.contains('summary-drop-target')&&
+    element.classList.contains('summary-drop-after')===after)return;
  summaryClearIndicators();
  element.classList.add('summary-drop-target');
  if(after)element.classList.add('summary-drop-after');
@@ -2356,11 +2359,8 @@ function summaryDragStart(e,data,ghost){
  e.dataTransfer.effectAllowed='move';
  e.dataTransfer.setData('text/plain',JSON.stringify(data));
  if(ghost)e.dataTransfer.setDragImage(ghost,12,12);
- // Let the browser capture its drag image first; then collapse the vacated
- // slot. Keep the actual DOM nodes until dragend for reliable cleanup.
- requestAnimationFrame(()=>{
-   if(summaryDrag===data)for(const element of originals)element.classList.add('summary-drag-source');
- });
+ // Keep the source in place until the pointer first enters a valid drop
+ // destination; summaryMarkDrop then collapses it. This preserves drag/drop.
 }
 function summaryDropOn(e,target,col){
  if(!summaryEditMode||!summaryDrag)return;
