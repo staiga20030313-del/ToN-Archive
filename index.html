@@ -1540,6 +1540,54 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
  width:calc(100% - 60px)!important;
  min-width:0!important;
 }
+
+/* Unbound summary: its name belongs to the icon's upper right, on a separate
+   line directly above survival/participant/new counts, never below the icon. */
+.results-workspace .summary-record.unbound-row:not(.text-record){
+ grid-template-rows:minmax(16px,auto) minmax(24px,auto)!important;
+ align-items:center!important;
+}
+.results-workspace .summary-record.unbound-row:not(.enlarged):not(.text-record) .summary-terror-icons{
+ grid-column:1!important;grid-row:1/3!important;
+ flex-direction:row!important;flex-wrap:nowrap!important;
+ justify-content:center!important;align-items:center!important;
+}
+.results-workspace .summary-record.unbound-row:not(.text-record) .summary-unbound-label{
+ grid-column:2/4!important;grid-row:1!important;
+ align-self:end!important;justify-self:center!important;
+ display:block;min-width:0;max-width:100%;width:100%;
+ font-size:10px!important;line-height:1.3!important;
+ text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ padding:0 2px;color:#ddd;
+}
+.results-workspace .summary-record.unbound-row:not(.enlarged):not(.text-record) .summary-counts{
+ grid-column:2!important;grid-row:2!important;align-self:center!important;
+}
+.results-workspace .summary-record.unbound-row:not(.enlarged):not(.text-record) .summary-new{
+ grid-column:3!important;grid-row:2!important;align-self:center!important;
+}
+.results-workspace .summary-record.unbound-row:not(.enlarged):not(.text-record) .summary-map{
+ grid-column:4!important;grid-row:1/3!important;
+}
+.results-workspace .summary-record.enlarged.unbound-row:not(.text-record){
+ grid-template-rows:minmax(18px,auto) minmax(58px,auto) auto!important;
+}
+.results-workspace .summary-record.enlarged.unbound-row:not(.text-record) .summary-terror-icons{
+ grid-column:1!important;grid-row:1/3!important;
+ flex-direction:row!important;align-self:center!important;justify-content:center!important;
+}
+.results-workspace .summary-record.enlarged.unbound-row:not(.text-record) .summary-unbound-label{
+ grid-column:2/4!important;grid-row:1!important;font-size:13px!important;
+}
+.results-workspace .summary-record.enlarged.unbound-row:not(.text-record) .summary-counts{
+ grid-column:2!important;grid-row:2!important;
+}
+.results-workspace .summary-record.enlarged.unbound-row:not(.text-record) .summary-new{
+ grid-column:3!important;grid-row:2!important;
+}
+.results-workspace .summary-record.enlarged.unbound-row:not(.text-record) .summary-map{
+ grid-column:1/-1!important;grid-row:3!important;
+}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.77">v1.0.77</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
@@ -2332,7 +2380,7 @@ function summaryRecordIcons(rec){
    strip.append(terrorIcon(id,rec.round,rec.variant,rec.rareChoices?.[id]));
  }
  // Saved results with no terror selection remain blank, like the desktop version.
- if(rec.round==='Unbound'&&values.length)strip.append(dom('span','summary-unbound-label',terrorDisplayName(values[0],rec.round,rec.rareChoices?.[values[0]])));
+ // Unbound names render in their own grid cell above the player counts.
  strip.title=values.map(id=>terrorDisplayName(id,rec.round,rec.rareChoices?.[id])).join(' / ');
  return strip;
 }
@@ -2463,8 +2511,15 @@ function summaryRow(rec){
    };
    row.ondrop=e=>summaryDropOn(e,{id:rec.id,after:row.classList.contains('summary-drop-after')});
  }
- if(state.mode==='icon')row.append(summaryRecordIcons(rec));
- else{
+ if(state.mode==='icon'){
+   row.append(summaryRecordIcons(rec));
+   if(rec.round==='Unbound'&&rec.terrors?.[0]){
+     const name=terrorDisplayName(rec.terrors[0],rec.round,rec.rareChoices?.[rec.terrors[0]]);
+     const label=dom('span','summary-unbound-label',name);
+     label.title=name;
+     row.append(label);
+   }
+ }else{
    const name=(rec.terrors||[]).map(id=>terrorDisplayName(id,rec.round,rec.rareChoices?.[id])).join(', ')||'—';
    const label=dom('span','summary-terror-text',rec.summaryUppercase?name.toUpperCase():name);
    label.title=name;
@@ -2714,9 +2769,12 @@ async function summaryExportPng(){
                }
              }
              if(r.round==='Unbound'&&ids[0]){
-               g.font=(large?'18':'11')+'px "PixelMplus12",sans-serif';
+               // Unbound name sits to the icon's upper right, above the counts.
+               g.font=(large?'17':'11')+'px "PixelMplus12",sans-serif';
                g.fillStyle='#eee8f3';
-               g.fillText(terrorDisplayName(ids[0],r.round,r.rareChoices?.[ids[0]]),x+39+highlightInset,ry+(large?116:57),190);
+               const nameX=large?x+274+highlightInset:x+155+highlightInset;
+               g.fillText(terrorDisplayName(ids[0],r.round,r.rareChoices?.[ids[0]]),
+                 nameX,ry+(large?16:13),large?190:110);
              }
            }else{
              const label=ids.map(id=>terrorDisplayName(id,r.round,r.rareChoices?.[id])).join(', ')||'—';
