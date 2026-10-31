@@ -1352,6 +1352,20 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
  line-height:normal!important;
  font-variant-numeric:tabular-nums;
 }
+
+/* The VRC detector must scroll through the entire log even when its sidebar
+   has a fixed maximum height. The toolbar stays visible above the list. */
+.archive-workspace>.vrc-live-panel .vrc-live-rounds{
+ min-height:0!important;
+ flex:1 1 0%!important;
+ overflow-y:auto!important;
+ overflow-x:hidden!important;
+ overscroll-behavior-y:contain;
+ scrollbar-gutter:stable;
+}
+.archive-workspace>.vrc-live-panel .vrc-live-rounds>.vrc-live-round{
+ flex-shrink:0!important;
+}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.60">v1.0.60</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
