@@ -27,9 +27,19 @@ const sortButton=byId('vrcLiveSort'),roundFilterButton=byId('vrcLiveRoundFilterT
       roundFilterClose=byId('vrcLiveRoundFilterClose'),
       roundFilterGrid=byId('vrcLiveRoundFilterGrid'),
       roundFilterVariants=byId('vrcLiveRoundFilterVariants'),
-      excludeSecondsInput=byId('vrcLiveExcludeSeconds');
+      excludeSecondsInput=byId('vrcLiveExcludeSeconds'),
+      excludeNoSurvivorsInput=byId('vrcLiveExcludeNoSurvivors');
 const disabledRounds=new Set();
 const DURATION_FILTER_KEY='ton-archive-vrc-exclude-seconds';
+const NO_SURVIVORS_FILTER_KEY='ton-archive-vrc-exclude-zero-survivors';
+let excludeNoSurvivors=false;
+try{excludeNoSurvivors=localStorage.getItem(NO_SURVIVORS_FILTER_KEY)==='true'}catch{}
+excludeNoSurvivorsInput.checked=excludeNoSurvivors;
+excludeNoSurvivorsInput.addEventListener('change',()=>{
+  excludeNoSurvivors=excludeNoSurvivorsInput.checked;
+  try{localStorage.setItem(NO_SURVIVORS_FILTER_KEY,String(excludeNoSurvivors))}catch{}
+  renderScan({resetScroll:true});
+});
 // First launch defaults to 170 seconds. An explicitly empty saved value disables filtering.
 let excludeSeconds=170;
 try{
@@ -56,6 +66,8 @@ const roundList=typeof rounds!=='undefined'?rounds:[];
 const variantList=typeof variants!=='undefined'?variants:{};
 function roundKeys(round){return [round,...(variantList[round]||[]).map(v=>round+'/'+v)]}
 function roundAllowed(r){
+  // Zero means no estimated survivors; unknown (-1/null) is not a confirmed zero.
+  if(excludeNoSurvivors&&r.estimatedSurvivors===0)return false;
   // Filter only rounds with a known elapsed time. Keep ongoing/unknown rounds visible.
   // Match the integer-second display used in the detected-round cards.
   if(excludeSeconds!==null&&Number.isFinite(r.durationSeconds)&&
