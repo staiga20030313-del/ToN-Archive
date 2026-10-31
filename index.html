@@ -1457,12 +1457,11 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
  grid-area:workspace;min-width:0;width:100%;
  display:grid!important;
  grid-template-columns:minmax(0,1fr) minmax(0,4fr)!important;
- grid-template-areas:"preview preview" "entry results"!important;
- grid-template-rows:auto minmax(0,1fr)!important;
+ grid-template-areas:"entry results"!important;
+ grid-template-rows:minmax(0,1fr)!important;
  gap:10px!important;
  align-items:start!important;
 }
-.shell>.archive-workspace>.preview-panel{grid-area:preview}
 .shell>.archive-workspace>.entry-panel{grid-area:entry}
 .shell>.archive-workspace>.results-workspace{grid-area:results}
 .shell>.vrc-live-panel{
@@ -1510,14 +1509,26 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
   display:flex!important;flex-direction:column!important;
   gap:10px!important;
  }
- .shell>.archive-workspace>.preview-panel,
  .shell>.archive-workspace>.entry-panel,
  .shell>.archive-workspace>.results-workspace{width:100%!important}
 }
+
+/* The pending-preview panel was removed. Keep summary edit/export controls in
+   the summary heading, without reserving the old full-width preview row. */
+.shell>.archive-workspace>.results-workspace .records-panel>.headline{
+ display:flex!important;align-items:center!important;justify-content:space-between!important;
+ gap:8px!important;flex-wrap:wrap!important;
+}
+.shell>.archive-workspace .summary-header-actions{
+ display:flex;align-items:center;justify-content:flex-end;
+ flex:0 0 auto;gap:6px;margin-left:auto;
+}
+.shell>.archive-workspace .summary-header-actions button{
+ font-size:11px;padding:5px 9px;white-space:nowrap;
+}
 </style></head><body><main class="shell">
-<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.75">v1.0.75</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
+<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.76">v1.0.76</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
- <section class="panel preview-panel" aria-label="追加予定の成果"><div class="preview-topline"><span class="preview-heading" id="previewHeading">追加予定の成果</span><span class="preview-hint" id="previewHint">左の項目から入力</span><div class="preview-tools"><button class="chip" id="summaryEdit">編集</button><button class="chip" id="exportPng">PNG出力</button></div></div><div class="preview-content"><div class="preview-display" id="previewDisplay" aria-live="polite"></div></div></section>
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
  <div class="entry-icon-row">
@@ -1536,7 +1547,7 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 </section>
 <div class="results-workspace">
 
- <section class="panel records-panel"><div class="headline"><div><h2>成果まとめ <span class="pill" id="recordCount">0</span></h2></div><div class="list-tools"><div class="utility-row"><button class="danger" id="deleteSession">周回を削除</button><button id="export">JSONを書き出す</button><button id="importButton">JSONを読み込む</button><input accept=".json,application/json" hidden="" id="importFile" type="file"/><button id="vrcLogButton" title="VRChatのoutput_log_*.txtをローカルで解析">VRCログ</button><input id="vrcLogFile" type="file" accept=".txt,text/plain" hidden/></div><input aria-label="記録を検索" class="field" id="search" placeholder="記録を検索" style="max-width:200px"/><button class="chip on" id="listView">テキスト</button><button class="chip" id="iconView">アイコン形式</button></div></div><div class="records" id="records"></div></section>
+ <section class="panel records-panel"><div class="headline"><div><h2>成果まとめ <span class="pill" id="recordCount">0</span></h2></div><div class="summary-header-actions"><button class="chip" id="summaryEdit">編集</button><button class="chip" id="exportPng">PNG出力</button></div><div class="list-tools"><div class="utility-row"><button class="danger" id="deleteSession">周回を削除</button><button id="export">JSONを書き出す</button><button id="importButton">JSONを読み込む</button><input accept=".json,application/json" hidden="" id="importFile" type="file"/><button id="vrcLogButton" title="VRChatのoutput_log_*.txtをローカルで解析">VRCログ</button><input id="vrcLogFile" type="file" accept=".txt,text/plain" hidden/></div><input aria-label="記録を検索" class="field" id="search" placeholder="記録を検索" style="max-width:200px"/><button class="chip on" id="listView">テキスト</button><button class="chip" id="iconView">アイコン形式</button></div></div><div class="records" id="records"></div></section>
 </div>
 
 </div>
@@ -1923,38 +1934,6 @@ function updateForm(){
  playerCountValidation(false);
  $('addEntry').textContent=editing?'変更を保存':'＋ 成果まとめに追加';
  $('cancelEdit').hidden=!editing;
- renderPendingPreview();
-}
-
-/* Preview only: the saved record format and existing actions are untouched. */
-function renderPendingPreview(){
- const root=$('previewDisplay');if(!root)return;
- root.replaceChildren();
- $('previewHeading').textContent=editing?'編集中の成果':'追加予定の成果';
- $('previewHint').textContent=form.round?'内容を確認して追加':'左の項目から入力';
- const part=(kind,label,value,nodes=[])=>{
-   const item=dom('div','preview-item '+kind);
-   const iconOnly=kind==='round-preview'||kind==='terror-preview';
-   item.title=label+'：'+value;
-   item.setAttribute('aria-label',item.title);
-   if(nodes.length){const sprites=dom('div','preview-sprites');sprites.append(...nodes);item.append(sprites)}
-   if(!iconOnly){
-     const text=dom('div','preview-item-text');
-     text.append(dom('span','preview-label',label));
-     const v=dom('span','preview-value',value);v.title=value;
-     text.append(v);item.append(text);
-   }
-   root.append(item);
- };
- part('round-preview','ROUND',[form.round,form.variant].filter(Boolean).join(' / ')||'未選択',[roundIcon(form.round,form.variant)||questionIcon()]);
- const chosen=form.terrors||[];
- const ids=form.round==='Bloodbath'&&form.variant==='EX'&&chosen[0]?Array(3).fill(chosen[0]):chosen.slice(0,3);
- part('terror-preview','TERROR',chosen.length?chosen.map(id=>terrorDisplayName(id,form.round,form.rareChoices?.[id])).join(' / '):'未選択',
-   ids.length?ids.map(id=>terrorIcon(id,form.round,form.variant,form.rareChoices?.[id])):[questionIcon(form.round,form.variant)]);
- const counts=['survived','players','newPlayers'].map(k=>form[k]===''||form[k]===null||form[k]===undefined?'-':form[k]===-1||form[k]==='-1'?'?':form[k]);
- const metrics=dom('div','preview-metrics',counts.join(' / '));
- metrics.prepend(dom('small','', '生存 / 参加 / 新規'));root.append(metrics);
- part('map-preview','MAP',mapName(form.map)||'未選択',form.map&&mapBadge(form.map)?[mapBadge(form.map)]:[]);
 }
 
 function choose(kind){if(selector===kind){selector=null;$('selector').classList.remove('open');return}selector=kind;$('selector').classList.add('open');renderSelector()}
@@ -2177,7 +2156,6 @@ function readCounts(){
    if(!Number.isNaN(parsePlayerValue(form[id])))playerStepperLastValid[id]=form[id];
  }
  playerCountValidation(false);
- renderPendingPreview();
 }
 // A034 (Judas) becomes Monarch in Midnight; its Classic partners are optional.
 function isMidnightMonarchSelected(){return form.round==='Midnight'&&form.terrors.includes('A034')&&specialFor('A034','Midnight')==='SR007'}
