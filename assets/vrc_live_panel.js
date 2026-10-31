@@ -296,10 +296,14 @@ function renderScan({resetScroll=false}={}){
   updateSelectedCount();
 }
 function publish(data,file){
+  const filename=file?.name||data?.file||'';
   const previousFile=vrcLogScan?.file||'';
-  if(previousFile&&previousFile!==file.name)selectedKeys.clear();
-  vrcLogScan={...data,file:file.name};
-  renderScan({resetScroll:Boolean(previousFile&&previousFile!==file.name)});
+  if(previousFile&&previousFile!==filename)selectedKeys.clear();
+  vrcLogScan={...data,file:filename};
+  renderScan({resetScroll:Boolean(previousFile&&previousFile!==filename)});
+  // Keep the analyzed round list locally so reloading the site does not
+  // depend on browsers retaining direct file-system permissions.
+  void cacheLastScan(vrcLogScan);
 }
 function errorText(error){
   return error?.message||String(error||'不明なエラー');
@@ -346,8 +350,10 @@ function start(){
   void poll(true);
   timer=setInterval(()=>{if(!document.hidden)void poll()},PERIOD);
 }
-async function saveHandle(handle){
-  if(!('indexedDB'in window))return;
+// Store directory/file handles and the latest parsed scan in the existing
+// IndexedDB database. No raw VRChat log text is saved or uploaded.
+function saveAccessValue(key,value){
+  if(!('indexedDB'in window))return Promise.resolve(false);
   return new Promise(resolve=>{
     try{
       const request=indexedDB.open('ton-archive-log-access',1);
@@ -355,21 +361,21 @@ async function saveHandle(handle){
         const db=request.result;
         if(!db.objectStoreNames.contains('handles'))db.createObjectStore('handles');
       };
-      request.onerror=()=>resolve();
+      request.onerror=()=>resolve(false);
       request.onsuccess=()=>{
         const db=request.result;
         try{
           const tx=db.transaction('handles','readwrite');
-          tx.objectStore('handles').put(handle,'vrc');
-          tx.oncomplete=()=>{db.close();resolve()};
-          tx.onerror=()=>{db.close();resolve()};
-        }catch{db.close();resolve()}
+          tx.objectStore('handles').put(value,key);
+          tx.oncomplete=()=>{db.close();resolve(true)};
+          tx.onerror=tx.onabort=()=>{db.close();resolve(false)};
+        }catch{db.close();resolve(false)}
       };
-    }catch{resolve()}
+    }catch{resolve(false)}
   });
 }
-async function restoreHandle(){
-  if(!('indexedDB'in window))return null;
+function restoreAccessValue(key){
+  if(!('indexedDB'in window))return Promise.resolve(null);
   return new Promise(resolve=>{
     try{
       const request=indexedDB.open('ton-archive-log-access',1);
@@ -382,13 +388,81 @@ async function restoreHandle(){
         const db=request.result;
         try{
           const tx=db.transaction('handles','readonly');
-          const get=tx.objectStore('handles').get('vrc');
-          get.onsuccess=()=>{db.close();resolve(get.result||null)};
-          get.onerror=()=>{db.close();resolve(null)};
+          const get=tx.objectStore('handles').get(key);
+          let value=null;
+          get.onsuccess=()=>{value=get.result??null};
+          tx.oncomplete=()=>{db.close();resolve(value)};
+          tx.onerror=tx.onabort=()=>{db.close();resolve(null)};
         }catch{db.close();resolve(null)}
       };
     }catch{resolve(null)}
   });
+}
+function cacheLastScan(scan){
+  if(!Array.isArray(scan?.rounds))return Promise.resolve(false);
+  // Player-name tracking sets are needed only during parsing, not for
+  // displaying or importing the detected results after a page reload.
+  const {rounds,...meta}=scan;
+  const snapshot={...meta,rounds:rounds.map(({observed,deathNames,...round})=>round)};
+  return saveAccessValue('last-scan',{version:1,scan:snapshot,savedAt:Date.now()});
+}
+async function restoreLastLog(){
+  // Retrieve the cache first. Actual disk access can be unavailable after
+  // reload until the user explicitly reauthorizes the previous directory.
+  const cached=await restoreAccessValue('last-scan');
+  if(cached?.version===1&&Array.isArray(cached.scan?.rounds)&&!vrcLogScan){
+    vrcLogScan=cached.scan;
+    previousFile=vrcLogScan.file||'';
+    window.TON_VRC_LOG?.applyMappingsToScan?.(vrcLogScan);
+    details.textContent=(vrcLogScan.file||'前回のログ')+' · 前回の検出結果';
+    setStatus('前回ログ · '+vrcLogScan.rounds.length+'ラウンド','idle');
+    renderScan();
+  }
+  // Do not request permission automatically: that requires a user gesture
+  // and the cached results should remain visible when permission expires.
+  savedStartFolder=await restoreAccessValue('vrc');
+  lastPickedLog=await restoreAccessValue('last-file');
+  if(savedStartFolder&&typeof window.showDirectoryPicker==='function'){
+    try{
+      const permission=typeof savedStartFolder.queryPermission==='function'
+        ?await savedStartFolder.queryPermission({mode:'read'}):'prompt';
+      if(permission==='granted'){
+        directory=savedStartFolder;
+        start();
+        return;
+      }
+    }catch{}
+  }
+  // Files selected via showOpenFilePicker can also be re-read automatically
+  // when the browser still grants access, even without a folder connection.
+  if(lastPickedLog&&typeof window.showOpenFilePicker==='function'){
+    try{
+      const permission=typeof lastPickedLog.queryPermission==='function'
+        ?await lastPickedLog.queryPermission({mode:'read'}):'prompt';
+      if(permission==='granted'){
+        const file=await lastPickedLog.getFile();
+        if(file.size<=50*1024*1024&&window.TON_VRC_LOG){
+          const data=window.TON_VRC_LOG.analyze(await file.text(),file.name,MAP_DATA);
+          publish(data,file);
+          details.textContent=file.name;
+          setStatus('前回ファイルを再読込 · '+data.rounds.length+'ラウンド','idle');
+          return;
+        }
+      }
+    }catch{/* Keep the saved round list when the original file is unavailable. */}
+  }
+  if(vrcLogScan){
+    if(savedStartFolder||lastPickedLog){
+      setStatus('前回ログ表示中 · 再接続待ち','idle');
+      details.textContent=(vrcLogScan.file||'前回のログ')+' · 最新情報には再接続が必要';
+    }
+  }else if(savedStartFolder||lastPickedLog){
+    setStatus('再接続が必要','idle');
+    details.textContent='フォルダ接続またはファイル読込でログを再選択してください';
+  }else if(typeof window.showDirectoryPicker!=='function'){
+    setStatus('ログファイルを手動選択','idle');
+    details.textContent='自動監視はPCのChrome / Edgeで利用できます';
+  }
 }
 connect.onclick=async()=>{
   if(typeof window.showDirectoryPicker!=='function'){
@@ -404,7 +478,7 @@ connect.onclick=async()=>{
     }
     directory=picked;savedStartFolder=picked;
     lastSignature='';
-    void saveHandle(picked);
+    void saveAccessValue('vrc',picked);
     start();
   }catch(error){
     if(error?.name!=='AbortError'){
@@ -440,6 +514,7 @@ function openLogFilePicker(){
     if(file.size>50*1024*1024)throw Error('ログが50MBを超えています');
     const data=window.TON_VRC_LOG.analyze(await file.text(),file.name,MAP_DATA);
     lastPickedLog=handle;
+    void saveAccessValue('last-file',handle);
     publish(data,file);
     details.textContent=file.name;
     setStatus(directory?'監視中':'ファイル読込済み',directory?'watching':'idle');
@@ -562,19 +637,5 @@ if(summaryTarget){
   },true);
 }
 renderScan();
-if(typeof window.showDirectoryPicker==='function'){
-  void (async()=>{
-    const handle=await restoreHandle();if(!handle)return;
-    savedStartFolder=handle;
-    try{
-      const permission=typeof handle.queryPermission==='function'
-        ?await handle.queryPermission({mode:'read'}):'prompt';
-      if(permission==='granted'){directory=handle;start();}
-      else{setStatus('再接続が必要','idle');details.textContent='フォルダ接続を押して読み取りを許可してください'}
-    }catch{setStatus('フォルダの再接続が必要','idle')}
-  })();
-}else{
-  setStatus('ログファイルを手動選択','idle');
-  details.textContent='自動監視はPCのChrome / Edgeで利用できます';
-}
+void restoreLastLog();
 })();
