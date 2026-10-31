@@ -2163,6 +2163,7 @@ function summaryGroupColor(round,variant=''){
 }
 function summaryGroupTitle(group){
  if(group.round==='__highlights')return 'Highlights';
+ if(group.round==='Bloodbath'&&group.variant==='BB')return 'BLOODBATH';
  if(group.variant){
    if(group.round==='Sabotage')return 'SABOTAGE';
    return group.variant.toUpperCase();
