@@ -26,13 +26,39 @@ const sortButton=byId('vrcLiveSort'),roundFilterButton=byId('vrcLiveRoundFilterT
       roundFilterPopup=byId('vrcLiveRoundFilter'),
       roundFilterClose=byId('vrcLiveRoundFilterClose'),
       roundFilterGrid=byId('vrcLiveRoundFilterGrid'),
-      roundFilterVariants=byId('vrcLiveRoundFilterVariants');
+      roundFilterVariants=byId('vrcLiveRoundFilterVariants'),
+      excludeSecondsInput=byId('vrcLiveExcludeSeconds');
 const disabledRounds=new Set();
+const DURATION_FILTER_KEY='ton-archive-vrc-exclude-seconds';
+let excludeSeconds=null;
+try{
+  const saved=localStorage.getItem(DURATION_FILTER_KEY);
+  if(saved!==null&&saved.trim()!==''){
+    const value=Number(saved);
+    if(Number.isSafeInteger(value)&&value>=0)excludeSeconds=value;
+  }
+}catch{}
+excludeSecondsInput.value=excludeSeconds===null?'':String(excludeSeconds);
+excludeSecondsInput.addEventListener('input',()=>{
+  const raw=excludeSecondsInput.value.trim();
+  const value=raw===''?null:Number(raw);
+  if(value!==null&&(!Number.isSafeInteger(value)||value<0))return;
+  excludeSeconds=value;
+  try{
+    if(value===null)localStorage.removeItem(DURATION_FILTER_KEY);
+    else localStorage.setItem(DURATION_FILTER_KEY,String(value));
+  }catch{}
+  renderScan({resetScroll:true});
+});
 let sortBySurvival=false,expandedRound='';
 const roundList=typeof rounds!=='undefined'?rounds:[];
 const variantList=typeof variants!=='undefined'?variants:{};
 function roundKeys(round){return [round,...(variantList[round]||[]).map(v=>round+'/'+v)]}
 function roundAllowed(r){
+  // Filter only rounds with a known elapsed time. Keep ongoing/unknown rounds visible.
+  // Match the integer-second display used in the detected-round cards.
+  if(excludeSeconds!==null&&Number.isFinite(r.durationSeconds)&&
+     r.durationSeconds>=0&&Math.floor(r.durationSeconds)<=excludeSeconds)return false;
   if(!r.round)return true;
   if(r.round==='Sabotage'&&!r.variant)return ['Sabotage 1','Sabotage 2'].some(v=>!disabledRounds.has('Sabotage/'+v));
   return !disabledRounds.has(r.round+(r.variant?'/'+r.variant:''));
@@ -92,7 +118,7 @@ function renderRoundFilter(){
 function placeRoundFilter(){
   const rect=roundFilterButton.getBoundingClientRect();
   const width=Math.min(535,window.innerWidth-20);
-  const height=Math.min(280,window.innerHeight-20);
+  const height=Math.min(330,window.innerHeight-20);
   roundFilterPopup.style.left=Math.max(10,Math.min(window.innerWidth-width-10,rect.right-width))+'px';
   roundFilterPopup.style.top=Math.max(10,Math.min(window.innerHeight-height-10,rect.bottom+6))+'px';
 }
