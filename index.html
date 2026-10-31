@@ -2665,7 +2665,8 @@ async function summaryExportPng(){
    if(H>16000)throw Error('PNGの高さ上限を超えました');
    const output=document.createElement('canvas');output.width=W;output.height=H;
    const g=output.getContext('2d');
-   g.fillStyle='#211a2a';g.fillRect(0,0,W,H);
+   // Export canvas background only; leave the archive UI theme unchanged.
+   g.fillStyle='#707070';g.fillRect(0,0,W,H);
    g.fillStyle='#b189d2';g.fillRect(0,0,4,headerH);
    g.fillStyle='#efe8f3';g.font='700 22px "PixelMplus12",sans-serif';
    g.fillText(session.name||'ToN Results',22,34,W-44);
