@@ -667,7 +667,7 @@ html,body,button,input,select,textarea,option{
  background:#211a2a;
 }
 .summary-group::before{right:2px!important;bottom:2px!important}
-.summary-column{gap:10px!important}
+.summary-column{gap:7px!important}
 .summary-record.unbound-row:not(.text-record) .summary-terror-icons .unbound-canvas{
  image-rendering:pixelated;
 }
@@ -1682,7 +1682,7 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 }
 .archive-header .session-picker-delete[hidden]{display:none!important}
 </style></head><body><main class="shell">
-<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.92">v1.0.92</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" hidden aria-hidden="true" tabindex="-1"></select><div class="session-picker" id="sessionPicker"><button type="button" id="sessionPickerToggle" class="field session-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="sessionPickerList"><span id="sessionPickerName"></span><span aria-hidden="true">▾</span></button><div id="sessionPickerList" class="session-picker-list" role="listbox" aria-label="周回を選択" hidden></div></div><button id="addSession">＋ 新規周回</button></div></div></header>
+<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.93">v1.0.93</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" hidden aria-hidden="true" tabindex="-1"></select><div class="session-picker" id="sessionPicker"><button type="button" id="sessionPickerToggle" class="field session-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="sessionPickerList"><span id="sessionPickerName"></span><span aria-hidden="true">▾</span></button><div id="sessionPickerList" class="session-picker-list" role="listbox" aria-label="周回を選択" hidden></div></div><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
@@ -1765,6 +1765,18 @@ function terrorName(id){
 const ROUND_ATLAS_COORDS={"Classic":[32,320],"Alternate":[320,320],"8 Pages":[352,320],"Fog":[64,320],"Ghost":[224,320],"Punished":[96,320],"Cracked":[160,320],"Sabotage":[128,320],"Bloodbath":[192,320],"Midnight":[288,320],"Unbound":[256,320],"Moon":[320,288],"Other":[352,288]};
 const ROUND_SUBICON_COORDS={"Sabotage|Sabotage 1":[480,320],"Sabotage|Sabotage 2":[448,320],"Bloodbath|BB":[512,320],"Bloodbath|DT":[544,320],"Bloodbath|EX":[576,320],"Moon|Moon 1":[0,288],"Moon|Moon 2":[32,288],"Moon|Moon 3":[64,288],"Moon|Moon 4":[96,288],"Other|Other 1":[160,288],"Other|Other 2":[256,288],"Other|Other 3":[384,320],"Other|Other 4":[416,320],"Other|Other 5":[128,288]};
 const variants={'Sabotage':['Sabotage 1','Sabotage 2'],'Bloodbath':['BB','DT','EX'],'Moon':['Moon 1','Moon 2','Moon 3','Moon 4'],'Other':['Other 1','Other 2','Other 3','Other 4','Other 5']};
+// Keep display labels paired with the confirmed icon catalog identities.
+// Other 2-5 have no catalog names, so preserve their numbered labels.
+const ROUND_VARIANT_NAMES={
+ 'Moon|Moon 1':'Mystic Moon',
+ 'Moon|Moon 2':'Blood Moon',
+ 'Moon|Moon 3':'Twilight',
+ 'Moon|Moon 4':'Solstice',
+ 'Other|Other 1':'Run'
+};
+function roundVariantDisplayName(round,variant=''){
+ return (variant&&ROUND_VARIANT_NAMES[round+'|'+variant])||variant||round;
+}
 const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random();
 const initial=()=>({sessions:[{id:uid(),name:'周回 1',records:[]}],active:null,mode:'icon'});
 let state;try{state=JSON.parse(localStorage.getItem(KEY))}catch{state=null}if(!state||!Array.isArray(state.sessions)||!state.sessions.length)state=initial();if(!state.active||!state.sessions.some(s=>s.id===state.active))state.active=state.sessions[0].id;
@@ -2185,7 +2197,7 @@ function updateForm(){
  const r=$('roundButton');
  const roundSprite=roundIcon(form.round,form.variant);
  r.replaceChildren(roundSprite||questionIcon());
- r.title=[form.round,form.variant].filter(Boolean).join(' / ')||'ラウンドを選択';
+ r.title=form.round?(form.variant?form.round+' / '+roundVariantDisplayName(form.round,form.variant):form.round):'ラウンドを選択';
  r.setAttribute('aria-label',r.title);
  r.classList.toggle('has-round-sprite',!!roundSprite);
  r.classList.toggle('selected',!!form.round);
@@ -2261,7 +2273,7 @@ function renderSelector(){
    const selected=type==='terror'?form.terrors.includes(v):type==='round'?form.round===v:type==='variant'?form.variant===v:form.map===v;
    const b=dom('button','tile'+(selected?' active':'')+(type==='map'?' map':'')+(type==='terror'&&v.startsWith('U')?' unbound':'')+(type==='round'||type==='variant'?' round-tile':''));
    if(type==='round'||type==='variant'){
-     const parent=type==='round'?v:form.round,label=type==='round'?v:parent+' / '+v;
+     const parent=type==='round'?v:form.round,label=type==='round'?v:parent+' / '+roundVariantDisplayName(parent,v);
      b.append(roundIcon(parent,type==='variant'?v:'')||questionIcon());
      b.title=label;b.setAttribute('aria-label',label);
      b.onmouseenter=()=>{$('terrorNamePreview').textContent=label};
@@ -2545,7 +2557,7 @@ function summaryRowHeight(rec){
  return 34;
 }
 function summaryBlockHeight(block){
- return block.groups.reduce((h,g)=>h+33+g.records.reduce((n,r)=>n+summaryRowHeight(r),0)+9,0)+7;
+ return block.groups.reduce((h,g)=>h+33+g.records.reduce((n,r)=>n+summaryRowHeight(r),0)+6,0)+7;
 }
 function summaryBuildColumns(){
  const cols=[[],[]],height=[0,0],session=current();
@@ -2595,7 +2607,8 @@ function summaryGroupTitle(group){
  if(group.round==='Bloodbath'&&group.variant==='DT')return 'DOUBLE TROUBLE';
  if(group.variant){
    if(group.round==='Sabotage')return 'SABOTAGE';
-   return group.variant.toUpperCase();
+   // Use the exact subround name for the displayed icon and PNG export.
+   return roundVariantDisplayName(group.round,group.variant).toUpperCase();
  }
  return group.round.toUpperCase();
 }
@@ -2965,7 +2978,7 @@ async function summaryExportPng(){
    ...(session.records.some(r=>r.summaryPinned)?[{base:'__highlights',groups:[{round:'__highlights',variant:'',records:session.records.filter(r=>r.summaryPinned)}]}]:[]),
    ...summaryRecordsByBase()
  ],[]];
- const W=1080,colW=518,leftX=16,rightX=546,pad=16,headerH=54,gap=12;
+ const W=1080,colW=518,leftX=16,rightX=546,pad=16,headerH=54,gap=9;
  try{
    if(document.fonts?.ready)await document.fonts.ready;
    const rowHeight=rec=>iconMode?summaryRowHeight(rec):(rec.summaryUppercase?70:49);
