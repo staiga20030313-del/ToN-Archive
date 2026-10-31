@@ -1407,6 +1407,38 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 .vrc-round-filter-options .vrc-round-duration-filter{display:flex;align-items:center;gap:6px}
 .vrc-round-filter-options .vrc-round-duration-filter>label:last-child{font-size:12px;white-space:nowrap;cursor:pointer}
 .vrc-round-filter-options .vrc-round-duration-filter input[type=number]:disabled{opacity:.45;cursor:not-allowed}
+
+/* Summary reorder: a moved item collapses at its source. Its exact measured
+   height is animated open at the insertion edge (rows, groups or column end). */
+.results-workspace #records.summary-editing .summary-drag-source{display:none!important}
+.results-workspace #records.summary-editing .summary-record,
+.results-workspace #records.summary-editing .summary-group,
+.results-workspace #records.summary-editing .summary-column-end{
+ transition:margin-top .18s ease,margin-bottom .18s ease,padding .18s ease!important;
+}
+.results-workspace #records.summary-editing .summary-record.summary-drop-target{
+ padding-top:1px!important;padding-bottom:1px!important;
+}
+.results-workspace #records.summary-editing .summary-record.summary-drop-target:not(.summary-drop-after){
+ margin-top:var(--summary-drag-gap,34px)!important;
+}
+.results-workspace #records.summary-editing .summary-record.summary-drop-after{
+ margin-bottom:var(--summary-drag-gap,34px)!important;
+}
+.results-workspace #records.summary-editing .summary-group.summary-drop-target:not(.summary-drop-after){
+ margin-top:var(--summary-drag-gap,60px)!important;
+}
+.results-workspace #records.summary-editing .summary-group.summary-drop-after{
+ margin-bottom:var(--summary-drag-gap,60px)!important;
+}
+.results-workspace #records.summary-editing .summary-column-end.summary-drop-target{
+ margin-top:var(--summary-drag-gap,60px)!important;
+}
+@media(prefers-reduced-motion:reduce){
+ .results-workspace #records.summary-editing .summary-record,
+ .results-workspace #records.summary-editing .summary-group,
+ .results-workspace #records.summary-editing .summary-column-end{transition:none!important}
+}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.67">v1.0.67</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
@@ -2125,6 +2157,7 @@ function remove(id){current().records=current().records.filter(r=>r.id!==id);if(
    Two independent vertical columns, round-colored frames, compact icon entries,
    top Highlights, inline editing, and distinct round / record drag handles. */
 let summaryEditMode=false,summaryDrag=null,summaryContextRecord=null;
+let summaryDragSourceNodes=[];
 const summaryRoundImage=new Image();
 let summaryRoundImageReady=false;
 const summaryRoundPalette=new Map();
@@ -2236,9 +2269,25 @@ function summaryRecordIcons(rec){
  return strip;
 }
 function summaryClearIndicators(){
- document.querySelectorAll('.summary-drop-target,.summary-drop-after').forEach(x=>{
+ document.querySelectorAll('#records .summary-drop-target,#records .summary-drop-after').forEach(x=>{
    x.classList.remove('summary-drop-target','summary-drop-after');
  });
+}
+function summaryMarkDrop(element,after=false){
+ // Avoid resetting the same margin on every dragover event: the gap animates
+ // only when the destination changes.
+ if(element.classList.contains('summary-drop-target')===
+    true&&element.classList.contains('summary-drop-after')===after)return;
+ summaryClearIndicators();
+ element.classList.add('summary-drop-target');
+ if(after)element.classList.add('summary-drop-after');
+}
+function summaryFinishDrag(){
+ summaryDrag=null;
+ summaryClearIndicators();
+ for(const element of summaryDragSourceNodes)element.classList.remove('summary-drag-source');
+ summaryDragSourceNodes=[];
+ $('records').style.removeProperty('--summary-drag-gap');
 }
 function summarySaveAndDraw(){
  persist();renderRecords();
@@ -2293,15 +2342,31 @@ function summaryMoveRecord(id,target,after){
 }
 function summaryDragStart(e,data,ghost){
  if(!summaryEditMode)return;
+ const root=$('records');
+ const originals=[...root.querySelectorAll(data.type==='round'?'.summary-group':'.summary-record')]
+   .filter(el=>data.type==='round'?el.dataset.round===data.base:el.dataset.id===data.id);
+ if(!originals.length){e.preventDefault();return}
  summaryDrag=data;
+ summaryDragSourceNodes=originals;
+ const rowGap=originals.length>1?
+   (parseFloat(getComputedStyle(originals[0].parentElement).rowGap)||0):0;
+ const height=originals.reduce((sum,element)=>sum+element.getBoundingClientRect().height,0)
+   +rowGap*Math.max(0,originals.length-1);
+ root.style.setProperty('--summary-drag-gap',Math.ceil(height)+'px');
  e.dataTransfer.effectAllowed='move';
  e.dataTransfer.setData('text/plain',JSON.stringify(data));
  if(ghost)e.dataTransfer.setDragImage(ghost,12,12);
+ // Let the browser capture its drag image first; then collapse the vacated
+ // slot. Keep the actual DOM nodes until dragend for reliable cleanup.
+ requestAnimationFrame(()=>{
+   if(summaryDrag===data)for(const element of originals)element.classList.add('summary-drag-source');
+ });
 }
 function summaryDropOn(e,target,col){
  if(!summaryEditMode||!summaryDrag)return;
  e.preventDefault();e.stopPropagation();
- const move=summaryDrag;summaryDrag=null;summaryClearIndicators();
+ const move=summaryDrag;
+ summaryFinishDrag();
  if(move.type==='round')summaryMoveRound(move.base,typeof target==='object'?target?.base:target,col,!!target?.after);
  else if(move.type==='record'&&target&&typeof target==='object')summaryMoveRecord(move.id,target.id,target.after);
 }
@@ -2311,7 +2376,7 @@ function summaryGrip(cls,label,dragInfo){
  grip.setAttribute('role','button');grip.setAttribute('tabindex','0');
  grip.title=label;grip.setAttribute('aria-label',label);
  grip.ondragstart=e=>summaryDragStart(e,dragInfo,grip.parentElement);
- grip.ondragend=()=>{summaryDrag=null;summaryClearIndicators()};
+ grip.ondragend=summaryFinishDrag;
  return grip;
 }
 function summaryRow(rec){
@@ -2324,8 +2389,9 @@ function summaryRow(rec){
      if(summaryDrag?.type!=='record'||summaryDrag.id===rec.id)return;
      const source=current().records.find(r=>r.id===summaryDrag.id);
      if(!source||source.round!==rec.round||(source.variant||'')!==(rec.variant||'')||!!source.summaryPinned!==!!rec.summaryPinned)return;
-     e.preventDefault();e.stopPropagation();summaryClearIndicators();row.classList.add('summary-drop-target');
-     if(e.offsetY>row.offsetHeight/2)row.classList.add('summary-drop-after');
+     e.preventDefault();e.stopPropagation();
+     const rect=row.getBoundingClientRect();
+     summaryMarkDrop(row,e.clientY>rect.top+rect.height/2);
    };
    row.ondrop=e=>summaryDropOn(e,{id:rec.id,after:row.classList.contains('summary-drop-after')});
  }
@@ -2378,12 +2444,19 @@ function summaryGroup(group,base,column){
  const title=dom('div','summary-group-head');
  if(summaryEditMode&&!highlighted){
    title.append(summaryGrip('summary-round-grip','ラウンド全体をドラッグ',{type:'round',base}));
-   title.ondragover=e=>{
+   box.ondragover=e=>{
      if(summaryDrag?.type!=='round'||summaryDrag.base===base)return;
-     e.preventDefault();e.stopPropagation();summaryClearIndicators();box.classList.add('summary-drop-target');
-     if(e.offsetY>title.offsetHeight/2)box.classList.add('summary-drop-after');
+     e.preventDefault();e.stopPropagation();
+     const rect=box.getBoundingClientRect(),after=e.clientY>rect.top+rect.height/2;
+     // A round with multiple subrounds moves as one block. Show its gap
+     // before the first or after the last subround, never in the middle.
+     const groups=[...box.parentElement.children].filter(el=>el.classList.contains('summary-group')&&el.dataset.round===base);
+     summaryMarkDrop(after?groups[groups.length-1]:groups[0],after);
    };
-   title.ondrop=e=>summaryDropOn(e,{base,after:box.classList.contains('summary-drop-after')},column);
+   box.ondrop=e=>{
+     const active=[...box.parentElement.children].find(el=>el.classList.contains('summary-group')&&el.dataset.round===base&&el.classList.contains('summary-drop-target'));
+     summaryDropOn(e,{base,after:!!active?.classList.contains('summary-drop-after')},column);
+   };
  }
  if(!highlighted){
    const ico=roundIcon(group.round,group.variant);
@@ -2398,6 +2471,7 @@ function summaryGroup(group,base,column){
 function renderRecords(){
  const root=$('records');root.replaceChildren();
  root.classList.add('summary-board');root.classList.remove('viewicon');
+ root.classList.toggle('summary-editing',summaryEditMode);
  root.classList.toggle('text-summary',state.mode==='text');
  $('listView').classList.toggle('on',state.mode==='text');
  $('iconView').classList.toggle('on',state.mode==='icon');
@@ -2426,7 +2500,7 @@ function renderRecords(){
    }
    if(summaryEditMode){
      const end=dom('div','summary-column-end','ここへラウンドを移動');
-     end.ondragover=e=>{if(summaryDrag?.type!=='round')return;e.preventDefault();summaryClearIndicators();end.classList.add('summary-drop-target')};
+     end.ondragover=e=>{if(summaryDrag?.type!=='round')return;e.preventDefault();e.stopPropagation();summaryMarkDrop(end)};
      end.ondrop=e=>summaryDropOn(e,null,i);
      cols[i].append(end);
    }
