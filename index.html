@@ -2074,7 +2074,7 @@ function commit(){
  persist();clearForm();renderRecords();notify('成果を保存しました');
 }
 function edit(rec){editing=rec.id;form={round:rec.round,variant:rec.variant||'',terrors:Array.isArray(rec.terrors)?[...rec.terrors]:[],map:rec.map||'',rareChoices:{...(rec.rareChoices||{})},survived:rec.survived??'',players:rec.players??'',newPlayers:rec.newPlayers??''};updateForm();window.scrollTo({top:100,behavior:'smooth'})}
-function remove(id){if(!confirm('この成果を削除しますか？'))return;current().records=current().records.filter(r=>r.id!==id);if(editing===id)clearForm();persist();renderRecords()}
+function remove(id){current().records=current().records.filter(r=>r.id!==id);if(editing===id)clearForm();persist();renderRecords()}
 
 /* RESULTS CANVAS v2 — mirrors the native RecordsCanvas data model and interactions.
    Two independent vertical columns, round-colored frames, compact icon entries,
