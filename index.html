@@ -1380,6 +1380,24 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
  font-variant-numeric:tabular-nums;
 }
 .vrc-round-duration-filter input:focus-visible{outline:1px solid #bbb;outline-offset:1px}
+
+/* Keep the seconds and zero-survivor VRC filters side by side above the round icons. */
+.vrc-round-filter-options{
+ display:flex;align-items:center;flex-wrap:wrap;gap:7px 18px;margin:0 0 9px;
+}
+.vrc-round-filter-options .vrc-round-duration-filter{margin:0}
+.vrc-round-filter-options .vrc-round-survivor-filter{
+ display:inline-flex;align-items:center;gap:6px;
+ color:#ddd;font-size:12px;white-space:nowrap;cursor:pointer;
+}
+.vrc-round-filter-options .vrc-round-survivor-filter input{
+ appearance:auto;accent-color:#aaa;
+ width:15px;height:15px;min-width:15px;margin:0;
+ cursor:pointer;
+}
+.vrc-round-filter-options .vrc-round-survivor-filter input:focus-visible{
+ outline:1px solid #bbb;outline-offset:2px;
+}
 </style></head><body><main class="shell">
 <header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.64">v1.0.64</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session"></select><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
@@ -1428,7 +1446,10 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 </main>
 <div id="vrcLiveRoundFilter" class="vrc-round-filter-popover" hidden role="group" aria-label="ログに表示するラウンド">
  <div class="vrc-round-filter-head"><strong>ラウンド表示切替</strong><button type="button" id="vrcLiveRoundFilterClose" aria-label="閉じる">×</button></div>
- <label class="vrc-round-duration-filter" for="vrcLiveExcludeSeconds"><input type="number" min="0" step="1" inputmode="numeric" id="vrcLiveExcludeSeconds" placeholder="秒数" autocomplete="off" aria-label="除外するラウンドの秒数（空欄で無効）"><span>秒以下は除外</span></label>
+ <div class="vrc-round-filter-options">
+  <label class="vrc-round-duration-filter" for="vrcLiveExcludeSeconds"><input type="number" min="0" step="1" inputmode="numeric" id="vrcLiveExcludeSeconds" placeholder="秒数" autocomplete="off" aria-label="除外するラウンドの秒数（空欄で無効）"><span>秒以下は除外</span></label>
+  <label class="vrc-round-survivor-filter" for="vrcLiveExcludeNoSurvivors"><input type="checkbox" id="vrcLiveExcludeNoSurvivors"><span>生存人数無しを除外</span></label>
+ </div>
  <div class="vrc-round-filter-grid" id="vrcLiveRoundFilterGrid"></div>
  <div class="vrc-round-filter-variants" id="vrcLiveRoundFilterVariants"></div>
 </div>
