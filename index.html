@@ -2444,6 +2444,8 @@ function summaryGroup(group,base,column){
  const title=dom('div','summary-group-head');
  if(summaryEditMode&&!highlighted){
    title.append(summaryGrip('summary-round-grip','ラウンド全体をドラッグ',{type:'round',base}));
+ }
+ if(summaryEditMode){
    box.ondragover=e=>{
      if(summaryDrag?.type==='record'){
        // In the opened margin gap the underlying target is the group rather
@@ -2463,7 +2465,7 @@ function summaryGroup(group,base,column){
        summaryMarkDrop(target,e.clientY>rect.top+rect.height/2);
        return;
      }
-     if(summaryDrag?.type!=='round'||summaryDrag.base===base)return;
+     if(summaryDrag?.type!=='round'||summaryDrag.base===base||highlighted)return;
      e.preventDefault();e.stopPropagation();
      const rect=box.getBoundingClientRect(),after=e.clientY>rect.top+rect.height/2;
      // A round with multiple subrounds moves as one block. Show its gap
@@ -2477,6 +2479,7 @@ function summaryGroup(group,base,column){
        if(active)summaryDropOn(e,{id:active.dataset.id,after:active.classList.contains('summary-drop-after')});
        return;
      }
+     if(highlighted)return;
      const active=[...box.parentElement.children].find(el=>el.classList.contains('summary-group')&&el.dataset.round===base&&el.classList.contains('summary-drop-target'));
      summaryDropOn(e,{base,after:!!active?.classList.contains('summary-drop-after')},column);
    };
