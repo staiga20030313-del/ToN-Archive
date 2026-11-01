@@ -1682,7 +1682,7 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 }
 .archive-header .session-picker-delete[hidden]{display:none!important}
 </style></head><body><main class="shell">
-<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.96">v1.0.96</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" hidden aria-hidden="true" tabindex="-1"></select><div class="session-picker" id="sessionPicker"><button type="button" id="sessionPickerToggle" class="field session-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="sessionPickerList"><span id="sessionPickerName"></span><span aria-hidden="true">▾</span></button><div id="sessionPickerList" class="session-picker-list" role="listbox" aria-label="周回を選択" hidden></div></div><button id="addSession">＋ 新規周回</button></div></div></header>
+<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.97">v1.0.97</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" hidden aria-hidden="true" tabindex="-1"></select><div class="session-picker" id="sessionPicker"><button type="button" id="sessionPickerToggle" class="field session-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="sessionPickerList"><span id="sessionPickerName"></span><span aria-hidden="true">▾</span></button><div id="sessionPickerList" class="session-picker-list" role="listbox" aria-label="周回を選択" hidden></div></div><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
@@ -2991,8 +2991,9 @@ async function summaryExportPng(){
    if(H>16000)throw Error('PNGの高さ上限を超えました');
    const output=document.createElement('canvas');output.width=W;output.height=H;
    const g=output.getContext('2d');
-   // Export canvas background only; leave the archive UI theme unchanged.
-   g.fillStyle='#707070';g.fillRect(0,0,W,H);
+   // Match the live site's actual body background (including theme changes).
+   g.fillStyle=getComputedStyle(document.body).backgroundColor||'#000000';
+   g.fillRect(0,0,W,H);
    g.fillStyle='#b189d2';g.fillRect(0,0,4,headerH);
    g.fillStyle='#efe8f3';g.font='700 22px "PixelMplus12",sans-serif';
    g.fillText(session.name||'ToN Results',22,34,W-44);
