@@ -2999,6 +2999,9 @@ async function summaryExportPng(){
    // Rectangle coordinates already include the responsive layout, CSS zoom,
    // large entries and Unbound. One uniform ratio maps them to PNG pixels.
    const ratio=(W-2*pad)/boardRect.width;
+   // Computed font sizes are unzoomed CSS pixels; the DOM rectangles
+   // already contain the page's CSS zoom factor.
+   const fontRatio=ratio*boardRect.width/Math.max(1,board.offsetWidth);
    const point=node=>{
      const rect=node.getBoundingClientRect();
      return {
@@ -3056,11 +3059,11 @@ async function summaryExportPng(){
        g.fillRect(rect.x,rect.y,rect.w,rect.h);
      }
      g.fillStyle=style.color;
-     g.font=style.fontStyle+' '+style.fontWeight+' '+(parseFloat(style.fontSize)*ratio)+'px '+style.fontFamily;
+     g.font=style.fontStyle+' '+style.fontWeight+' '+(parseFloat(style.fontSize)*fontRatio)+'px '+style.fontFamily;
      g.textBaseline='middle';
      g.textAlign=style.textAlign==='center'?'center':style.textAlign==='right'||style.textAlign==='end'?'right':'left';
-     const leftPadding=(parseFloat(style.paddingLeft)||0)*ratio;
-     const rightPadding=(parseFloat(style.paddingRight)||0)*ratio;
+     const leftPadding=(parseFloat(style.paddingLeft)||0)*fontRatio;
+     const rightPadding=(parseFloat(style.paddingRight)||0)*fontRatio;
      const width=Math.max(0,rect.w-leftPadding-rightPadding);
      const x=g.textAlign==='center'?rect.x+rect.w/2:g.textAlign==='right'?rect.x+rect.w-rightPadding:rect.x+leftPadding;
      let text=node.textContent;
