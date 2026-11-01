@@ -327,7 +327,17 @@ async function poll(force=false){
       lastSignature='';details.textContent='output_log_*.txt が見つかりません';
       setStatus('ログ待機中','watching');renderScan();return;
     }
-    const chosen=found[0]; // With no dropdown, always follow the latest output_log file.
+    // Choose the newest file only when the user first connects a folder.
+    // Afterwards, including after reload, continue reading that EXACT file
+    // even if VRChat creates a newer output_log_*.txt in the same folder.
+    const chosen=previousFile
+      ?found.find(entry=>entry.name===previousFile)
+      :found[0];
+    if(!chosen){
+      setStatus('選択中のログが見つかりません','error');
+      details.textContent=previousFile+' · フォルダ内にありません';
+      return;
+    }
     const file=await chosen.handle.getFile();
     const signature=[file.name,file.size,file.lastModified].join('|');
     details.textContent=file.name+' · '+humanTime(file.lastModified);
@@ -343,6 +353,10 @@ async function poll(force=false){
     // by a stale asynchronous directory scan that started earlier.
     if(activeLogSource!=='directory'||directory!==scanDirectory)return;
     lastSignature=signature;previousFile=file.name;
+    // Keep the concrete log handle too, so Refresh can use this file even
+    // after folder permission expires but the file permission survives.
+    lastPickedLog=chosen.handle;
+    void saveAccessValue('last-file',chosen.handle);
     publish(data,file,'directory');
     setStatus('監視中 · '+data.rounds.length+'ラウンド','watching');
   }catch(error){
@@ -501,7 +515,9 @@ connect.onclick=async()=>{
       details.textContent='選択フォルダ: '+picked.name;
     }
     directory=picked;savedStartFolder=picked;
-    lastSignature='';
+    // Explicitly connecting a folder chooses its newest log ONCE. The log
+    // then stays pinned until the user selects another file/folder.
+    previousFile='';lastSignature='';
     void saveAccessValue('vrc',picked);
     start();
   }catch(error){
@@ -595,10 +611,16 @@ function openLogFilePicker(){
     id:'ton-vrc-log-file',multiple:false,
     types:[{description:'VRChatログ (*.txt)',accept:{'text/plain':['.txt']}}]
   };
-  // Start in the previously connected VRChat directory when available.
-  // Otherwise the stable ID remembers the previous file-picker location.
-  if(directory||savedStartFolder||lastPickedLog){
-    options.startIn=directory||savedStartFolder||lastPickedLog;
+  // Browser security forbids a site from hard-coding the Windows AppData
+  // path. Once the user chooses VRChat/VRChat, the directory/file handle
+  // or this stable picker ID opens subsequent dialogs in that same folder.
+  const startAt=activeLogSource==='file'&&lastPickedLog
+    ?lastPickedLog
+    :directory||savedStartFolder||lastPickedLog;
+  if(startAt)options.startIn=startAt;
+  else{
+    setStatus('初回はVRChatログフォルダを選択','idle');
+    details.textContent='%USERPROFILE%\\AppData\\LocalLow\\VRChat\\VRChat';
   }
   // Call immediately from the click handler; awaiting first loses user activation.
   let request;
