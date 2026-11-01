@@ -1682,7 +1682,7 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 }
 .archive-header .session-picker-delete[hidden]{display:none!important}
 </style></head><body><main class="shell">
-<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.97">v1.0.97</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" hidden aria-hidden="true" tabindex="-1"></select><div class="session-picker" id="sessionPicker"><button type="button" id="sessionPickerToggle" class="field session-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="sessionPickerList"><span id="sessionPickerName"></span><span aria-hidden="true">▾</span></button><div id="sessionPickerList" class="session-picker-list" role="listbox" aria-label="周回を選択" hidden></div></div><button id="addSession">＋ 新規周回</button></div></div></header>
+<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.0.98">v1.0.98</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" hidden aria-hidden="true" tabindex="-1"></select><div class="session-picker" id="sessionPicker"><button type="button" id="sessionPickerToggle" class="field session-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="sessionPickerList"><span id="sessionPickerName"></span><span aria-hidden="true">▾</span></button><div id="sessionPickerList" class="session-picker-list" role="listbox" aria-label="周回を選択" hidden></div></div><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
@@ -2973,128 +2973,169 @@ function summaryInit(){
  renderRecords();
 }
 async function summaryExportPng(){
- const session=current(),iconMode=state.mode!=='text';
- const cols=iconMode?summaryBuildColumns():[[
-   ...(session.records.some(r=>r.summaryPinned)?[{base:'__highlights',groups:[{round:'__highlights',variant:'',records:session.records.filter(r=>r.summaryPinned)}]}]:[]),
-   ...summaryRecordsByBase()
- ],[]];
- const W=1080,colW=518,leftX=16,rightX=546,pad=16,headerH=54,gap=9;
+ const session=current(),board=$('records'),search=$('search');
+ const originalQuery=search.value,originalEditMode=summaryEditMode;
+ let temporaryRender=false;
+ const restoreBoard=()=>{
+   if(!temporaryRender)return;
+   search.value=originalQuery;
+   summaryEditMode=originalEditMode;
+   temporaryRender=false;
+   renderRecords();
+ };
  try{
    if(document.fonts?.ready)await document.fonts.ready;
-   const rowHeight=rec=>iconMode?summaryRowHeight(rec):(rec.summaryUppercase?70:49);
-   // Highlights needs clear space between its double frame and the first/last
-   // artwork rows. Keep PNG geometry aligned with the on-screen summary.
-   const groupHeight=group=>25+group.records.reduce((sum,rec)=>sum+rowHeight(rec),0)+3+
-     (group.round==='__highlights'?24:0);
-   const blocksHeight=col=>col.reduce((sum,block)=>sum+block.groups.reduce((s,group)=>s+groupHeight(group)+gap,0),0);
-   const H=Math.ceil(Math.max(140,headerH+pad+Math.max(...cols.map(blocksHeight))+pad));
+   // Export all saved results, without the edit grips or drag placeholders.
+   // The same real DOM/CSS layout is used for the on-screen summary.
+   if(originalQuery||originalEditMode){
+     search.value='';
+     summaryEditMode=false;
+     temporaryRender=true;
+     renderRecords();
+   }
+   const boardRect=board.getBoundingClientRect();
+   if(boardRect.width<=0)throw Error('成果まとめの表示幅を取得できません');
+   const W=1080,pad=16,headerH=54;
+   // Rectangle coordinates already include the responsive layout, CSS zoom,
+   // large entries and Unbound. One uniform ratio maps them to PNG pixels.
+   const ratio=(W-2*pad)/boardRect.width;
+   const point=node=>{
+     const rect=node.getBoundingClientRect();
+     return {
+       x:pad+(rect.left-boardRect.left)*ratio,
+       y:headerH+pad+(rect.top-boardRect.top)*ratio,
+       w:rect.width*ratio,h:rect.height*ratio
+     };
+   };
+   const groups=[...board.querySelectorAll('.summary-group')];
+   const endY=groups.reduce((max,node)=>Math.max(max,node.getBoundingClientRect().bottom-boardRect.top),0);
+   const H=Math.ceil(Math.max(140,headerH+2*pad+endY*ratio));
    if(H>16000)throw Error('PNGの高さ上限を超えました');
-   const output=document.createElement('canvas');output.width=W;output.height=H;
+   const output=document.createElement('canvas');
+   output.width=W;output.height=H;
    const g=output.getContext('2d');
-   // Match the live site's actual body background (including theme changes).
-   g.fillStyle=getComputedStyle(document.body).backgroundColor||'#000000';
+   if(!g)throw Error('PNG描画用キャンバスを初期化できません');
+   const bodyStyle=getComputedStyle(document.body);
+   g.fillStyle=bodyStyle.backgroundColor||'#000000';
    g.fillRect(0,0,W,H);
-   g.fillStyle='#b189d2';g.fillRect(0,0,4,headerH);
-   g.fillStyle='#efe8f3';g.font='700 22px "PixelMplus12",sans-serif';
-   g.fillText(session.name||'ToN Results',22,34,W-44);
-   const stroke=(fromX,fromY,toX,toY)=>{g.beginPath();g.moveTo(fromX+.5,fromY+.5);g.lineTo(toX+.5,toY+.5);g.stroke()};
-   for(let c=0;c<(iconMode?2:1);c++){
-     let y=headerH+pad,x=iconMode?(c?rightX:leftX):leftX;
-     const width=iconMode?colW:W-32;
-     for(const block of cols[c]){
-       for(const group of block.groups){
-         const gh=groupHeight(group),color=summaryGroupColor(group.round,group.variant),title=summaryGroupTitle(group);
-         // Native border starts at x+35, y+24; title interrupts the top line.
-         g.strokeStyle=color;g.lineWidth=1;
-         g.font='700 16px "PixelMplus12",sans-serif';
-         const titleX=x+(group.round==='__highlights'?14:53);
-         const titleWidth=g.measureText(title).width;
-         const top=y+24,bottom=y+gh-3,frameLeft=x+35,frameRight=x+width-4;
-         stroke(Math.min(frameRight,titleX+titleWidth+6),top,frameRight,top);
-         stroke(frameRight,top,frameRight,bottom);
-         stroke(frameLeft,bottom,frameRight,bottom);
-         stroke(frameLeft,y+22,frameLeft,bottom);
-         if(group.round==='__highlights'){
-           g.strokeStyle='#987daa';
-           stroke(Math.min(frameRight-4,titleX+titleWidth+10),top+4,frameRight-4,top+4);
-           stroke(frameRight-4,top+4,frameRight-4,bottom-4);
-           stroke(frameLeft+4,bottom-4,frameRight-4,bottom-4);
-           stroke(frameLeft+4,y+26,frameLeft+4,bottom-4);
-         }else{
-           const pos=(group.variant&&ROUND_SUBICON_COORDS[group.round+'|'+group.variant])||ROUND_ATLAS_COORDS[group.round];
-           if(pos&&summaryRoundImageReady){
-             g.imageSmoothingEnabled=false;
-             g.drawImage(summaryRoundImage,pos[0],pos[1],32,32,x+14,y,32,32);
-           }
-         }
-         g.font='700 16px "PixelMplus12",sans-serif';
-         g.fillStyle=group.round==='__highlights'?'#d8b3f9':'#efe8f3';
-         g.fillText(title,titleX,y+22,Math.max(0,width-65));
-         const highlightInset=group.round==='__highlights'?12:0;
-         let ry=y+25+highlightInset;
-         for(const r of group.records){
-           const rh=rowHeight(r),large=!!r.summaryUppercase;
-           const ids=r.round==='Bloodbath'&&r.variant==='EX'&&r.terrors?.[0]?Array(3).fill(r.terrors[0]):r.terrors||[];
-           if(iconMode){
-             for(let k=0;k<Math.min(ids.length,4);k++){
-               const id=ids[k],art=cachedTerrorCanvas(id,r.round,r.variant,r.rareChoices?.[id]);
-               const size=id.startsWith('U')?(large?76:38):(large?64:32);
-               if(art){
-                 const col=k%3,row=Math.floor(k/3);
-                 const startX=x+39+highlightInset+col*size,startY=ry+5+row*(size+4);
-                 g.imageSmoothingEnabled=false;g.drawImage(art,startX,startY,size,size);
-               }
-             }
-             if(r.round==='Unbound'&&ids[0]){
-               // Unbound name sits to the icon's upper right, above the counts.
-               g.font=(large?'17':'11')+'px "PixelMplus12",sans-serif';
-               g.fillStyle='#eee8f3';
-               const nameX=x+39+highlightInset+(large?76:38)+4;
-               g.fillText(terrorDisplayName(ids[0],r.round,r.rareChoices?.[ids[0]]),
-                 nameX,ry+(large?16:13),large?190:110);
-             }
-           }else{
-             const label=ids.map(id=>terrorDisplayName(id,r.round,r.rareChoices?.[id])).join(', ')||'—';
-             g.font=(r.summaryBold?'700 ':'400 ')+(large?'22':'15')+'px "PixelMplus12",sans-serif';
-             g.fillStyle='#eee8f3';g.fillText(large?label.toUpperCase():label,x+52+highlightInset,ry+(large?45:31),360);
-           }
-           const vals=summaryCounts(r);
-           if(iconMode){
-             // Native: map at right, numbers immediately to its left.
-             const mapX=x+width-4-4-204-highlightInset;
-             const countX=mapX-146,newX=mapX-68;
-             g.fillStyle='#efe8f3';
-             g.font=(r.summaryBold?'700 ':'400 ')+(large?'29':'18')+'px "PixelMplus12",sans-serif';
-             if(vals.pair)g.fillText(vals.pair,large?x+274+highlightInset:countX,ry+(large?39:29),large?126:72);
-             if(vals.newcomer){
-               g.fillStyle='#ad9cb7';g.font=(large?'17':'12')+'px "PixelMplus12",sans-serif';
-               g.fillText('New',large?x+402+highlightInset:newX,ry+(large?33:27));
-               g.fillStyle='#eee8f3';g.font=(r.summaryBold?'700 ':'400 ')+(large?'29':'18')+'px "PixelMplus12",sans-serif';
-               g.fillText(vals.newcomer,(large?x+448+highlightInset:newX+28),ry+(large?39:29),55);
-             }
-             if(r.map){
-               const badge=mapBadge(r.map);
-               if(badge){g.imageSmoothingEnabled=false;g.drawImage(badge,mapX,ry+(large?rh-43:4),204,40)}
-             }
-           }else{
-             g.fillStyle='#eee8f3';g.font=(large?'27':'18')+'px "PixelMplus12",sans-serif';
-             if(vals.pair)g.fillText(vals.pair,x+540,ry+31,110);
-             if(vals.newcomer){g.fillText('New '+vals.newcomer,x+650,ry+31,100)}
-             if(r.map){const badge=mapBadge(r.map);if(badge){g.imageSmoothingEnabled=false;g.drawImage(badge,x+width-210-highlightInset,ry+4,204,40)}}
-           }
-           ry+=rh;
-         }
-         y+=gh+gap;
+   g.fillStyle=getComputedStyle(board).getPropertyValue('--summary-accent').trim()||'#999';
+   g.fillRect(0,0,4,headerH);
+   g.fillStyle=bodyStyle.color||'#e7e7e7';
+   g.font='700 22px "PixelMplus12",sans-serif';
+   g.textAlign='left';g.textBaseline='middle';
+   g.fillText(session.name||'ToN Results',22,headerH/2,W-44);
+   // Pseudo-element borders match the interrupted frame and Highlights
+   // double border. Their inset is resolved from the same CSS as the page.
+   const paintFrame=(group,pseudo)=>{
+     const style=getComputedStyle(group,pseudo);
+     if(style.content==='none'||style.display==='none'||style.borderTopStyle==='none')return;
+     const rect=point(group),raw=group.getBoundingClientRect();
+     const zoom=raw.width/Math.max(1,group.offsetWidth);
+     const pixel=zoom*ratio;
+     const inset=name=>parseFloat(style.getPropertyValue(name))||0;
+     const x=rect.x+inset('left')*pixel,y=rect.y+inset('top')*pixel;
+     const w=rect.w-(inset('left')+inset('right'))*pixel;
+     const h=rect.h-(inset('top')+inset('bottom'))*pixel;
+     if(w<=0||h<=0)return;
+     g.save();
+     g.lineWidth=Math.max(.8,(parseFloat(style.borderTopWidth)||1)*pixel);
+     g.strokeStyle=style.borderTopColor;
+     g.strokeRect(x+g.lineWidth/2,y+g.lineWidth/2,
+       Math.max(0,w-g.lineWidth),Math.max(0,h-g.lineWidth));
+     g.restore();
+   };
+   const paintText=node=>{
+     if(!node||!node.textContent)return;
+     const rect=point(node),style=getComputedStyle(node);
+     if(rect.w<=0||rect.h<=0||style.visibility==='hidden'||style.display==='none')return;
+     g.save();
+     // Draw backing behind the title to interrupt the group's top border,
+     // just as the browser does with the live summary label.
+     if(style.backgroundColor!=='rgba(0, 0, 0, 0)'&&style.backgroundColor!=='transparent'){
+       g.fillStyle=style.backgroundColor;
+       g.fillRect(rect.x,rect.y,rect.w,rect.h);
+     }
+     g.fillStyle=style.color;
+     g.font=style.fontStyle+' '+style.fontWeight+' '+(parseFloat(style.fontSize)*ratio)+'px '+style.fontFamily;
+     g.textBaseline='middle';
+     g.textAlign=style.textAlign==='center'?'center':style.textAlign==='right'||style.textAlign==='end'?'right':'left';
+     const leftPadding=(parseFloat(style.paddingLeft)||0)*ratio;
+     const rightPadding=(parseFloat(style.paddingRight)||0)*ratio;
+     const width=Math.max(0,rect.w-leftPadding-rightPadding);
+     const x=g.textAlign==='center'?rect.x+rect.w/2:g.textAlign==='right'?rect.x+rect.w-rightPadding:rect.x+leftPadding;
+     let text=node.textContent;
+     if(style.textOverflow==='ellipsis'&&g.measureText(text).width>width){
+       while(text.length>1&&g.measureText(text+'…').width>width)text=text.slice(0,-1);
+       text+='…';
+     }
+     if(style.overflowX==='hidden'||style.overflow==='hidden'){
+       g.beginPath();g.rect(rect.x,rect.y,rect.w,rect.h);g.clip();
+     }
+     if(width>0)g.fillText(text,x,rect.y+rect.h/2,width);
+     g.restore();
+   };
+   const paintCanvas=node=>{
+     if(!node||!node.width||!node.height)return;
+     const rect=point(node);
+     if(rect.w<=0||rect.h<=0)return;
+     g.save();g.imageSmoothingEnabled=false;
+     // The enlarged map container can clip a badge on narrow screens.
+     const parent=node.parentElement;
+     if(parent&&getComputedStyle(parent).overflowX==='hidden'){
+       const clip=point(parent);
+       g.beginPath();g.rect(clip.x,clip.y,clip.w,clip.h);g.clip();
+     }
+     g.drawImage(node,rect.x,rect.y,rect.w,rect.h);
+     g.restore();
+   };
+   for(const group of groups){
+     const area=point(group);
+     g.fillStyle=getComputedStyle(group).backgroundColor||'#080808';
+     g.fillRect(area.x,area.y,area.w,area.h);
+     paintFrame(group,'::before');
+     if(group.classList.contains('highlights'))paintFrame(group,'::after');
+     const sprite=group.querySelector('.summary-group-head .round-sprite');
+     if(sprite&&summaryRoundImageReady){
+       const key=group.dataset.round||'';
+       const split=key.indexOf('|');
+       const round=split<0?key:key.slice(0,split);
+       const variant=split<0?'':key.slice(split+1);
+       const crop=(variant&&ROUND_SUBICON_COORDS[round+'|'+variant])||ROUND_ATLAS_COORDS[round];
+       if(crop){
+         const rect=point(sprite);
+         g.save();g.imageSmoothingEnabled=false;
+         g.drawImage(summaryRoundImage,crop[0],crop[1],32,32,rect.x,rect.y,rect.w,rect.h);
+         g.restore();
+       }
+     }
+     paintText(group.querySelector('.summary-group-head .summary-group-label'));
+     for(const row of group.querySelectorAll('.summary-record')){
+       // These are the original rendered canvases, not re-created sprites.
+       // This preserves the exact centered/scaled icons and map dimensions.
+       for(const icon of row.querySelectorAll('.summary-terror-icons canvas'))paintCanvas(icon);
+       paintText(row.querySelector('.summary-terror-text'));
+       paintText(row.querySelector('.summary-unbound-label'));
+       paintText(row.querySelector('.summary-counts'));
+       paintText(row.querySelector('.summary-new'));
+       const map=row.querySelector('.summary-map');
+       if(map){
+         const badge=map.querySelector('canvas');
+         if(badge)paintCanvas(badge);
+         else paintText(map);
        }
      }
    }
-   const blob=await new Promise((resolve,reject)=>output.toBlob(b=>b?resolve(b):reject(new Error('PNGの生成に失敗')),'image/png'));
+   restoreBoard();
+   const blob=await new Promise((resolve,reject)=>
+     output.toBlob(value=>value?resolve(value):reject(new Error('PNGの生成に失敗')),'image/png'));
    const a=document.createElement('a'),uri=URL.createObjectURL(blob);
-   a.href=uri;a.download=(session.name||'ToN_Summary').replace(/[\\/:*?"<>|]/g,'_')+'_summary.png';
+   a.href=uri;
+   a.download=(session.name||'ToN_Summary').replace(/[\\/:*?"<>|]/g,'_')+'_summary.png';
    document.body.append(a);a.click();a.remove();
    setTimeout(()=>URL.revokeObjectURL(uri),2500);
    notify('PNGを書き出しました');
  }catch(err){notify('PNG出力失敗: '+err.message)}
+ finally{restoreBoard()}
 }
 $('roundButton').onclick=()=>choose('round');$('terrorButton').onclick=()=>choose('terror');$('mapButton').onclick=()=>choose('map');$('closeSelector').onclick=()=>{selector=null;$('selector').classList.remove('open')};for(const id of ['survived','players','newPlayers']){
  const input=$(id),stepper=input.parentElement;
