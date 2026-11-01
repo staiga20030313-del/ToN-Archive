@@ -547,8 +547,8 @@ async function refreshLatestLog(){
   if(reload.disabled)return;
   reload.disabled=true;
   try{
-    // A folder connection follows the newest output_log_*.txt on disk.
-    // Force analysis even when file size and last-modified time did not change.
+    // A folder connection keeps the initially selected output_log_*.txt.
+    // Force analysis of that same file even if its metadata has not changed.
     if(activeLogSource==='directory'||(!activeLogSource&&(directory||savedStartFolder))){
       const handle=directory||savedStartFolder;
       if(handle){
@@ -557,13 +557,27 @@ async function refreshLatestLog(){
           :typeof handle.queryPermission==='function'
             ?await handle.queryPermission({mode:'read'}):'granted';
         if(permission!=='granted'){
+          // The saved file may remain accessible even when the parent
+          // directory's authorization has expired.
+          if(lastPickedLog){
+            try{
+              const filePermission=typeof lastPickedLog.requestPermission==='function'
+                ?await lastPickedLog.requestPermission({mode:'read'})
+                :typeof lastPickedLog.queryPermission==='function'
+                  ?await lastPickedLog.queryPermission({mode:'read'}):'granted';
+              if(filePermission==='granted'){
+                await readLogFileHandle(lastPickedLog,'ファイル更新済み');
+                return;
+              }
+            }catch{/* Show the reconnect message below. */}
+          }
           setStatus('フォルダの再接続が必要','idle');
           details.textContent='フォルダ接続を押して読み取りを許可してください';
           return;
         }
         directory=handle;savedStartFolder=handle;
         if(!connected){start();return}
-        setStatus('最新ログを再読込中','watching');
+        setStatus('選択中のログを再読込中','watching');
         await poll(true);
         return;
       }
