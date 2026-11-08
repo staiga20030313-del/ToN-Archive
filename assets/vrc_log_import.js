@@ -36,7 +36,7 @@ const page=/Page Collected\s*-\s*(\d+)\s*\/\s*8/i;
 /* Legacy native app: %LOCALAPPDATA%/ToNRoundRecords/terror_log_mappings.json.
    Imported mappings stay in this browser; they are never uploaded to a server. */
 const MAPPING_STORAGE='ton-archive-vrc-id-mapping-v1';
-/* 8 Pages logs contain two prefix values followed by one terror ID.
+/* 8 Pages logs contain one terror ID followed by two ignored values.
    Unlike the older 7-icon selector, these 62 IDs span the full game catalog.
    Missing atlas artwork remains explicitly unmatched, not guessed. */
 const EIGHT_PAGES_TERRORS=[{"name":"Slendy","id":"SR001"},{"name":"Punishing Bird","id":"C077"},{"name":"Snarbolax","id":"C082"},{"name":"Sturm","id":"C076"},{"name":"Arkus","id":"C062"},{"name":"Cartoon Cat","id":"C063"},{"name":"TBH","id":"C057"},{"name":"Specimen 10","id":"C053"},{"name":"Specimen 2","id":"C052"},{"name":"Withered Bonnie","id":"C036"},{"name":"MX","id":"C031"},{"name":"Luigi & Luigi Dolls","id":"C034"},{"name":"Trollage","id":null},{"name":"Toren's Shadow","id":"C010"},{"name":"Huggy","id":"C001"},{"name":"Corrupted Toys","id":"C002"},{"name":"Demented Spongebob","id":"C003"},{"name":"HER","id":"C005"},{"name":"Ao Oni","id":"C009"},{"name":"Sawrunner","id":"C020"},{"name":"Imposter","id":"C021"},{"name":"With Many Voices","id":"C026"},{"name":"The Guidance","id":"C025"},{"name":"Big Bird","id":"C032"},{"name":"Bacteria","id":"C070"},{"name":"Akumii-Kari","id":"C074"},{"name":"Miros Birds","id":"C086"},{"name":"Apocrean Harvester","id":"C061"},{"name":"Legs","id":"C045"},{"name":"This Killer Does Not Exist","id":"C133"},{"name":"Judgement Bird","id":"C047"},{"name":"All-Around-Helpers","id":"C083"},{"name":"Alternates","id":"E001"},{"name":"Something Wicked","id":"C038"},{"name":"Deleted","id":"C114"},{"name":"HoovyDundy","id":"C072"},{"name":"Angry Munci","id":"A028"},{"name":"Shadow Freddy","id":"E004"},{"name":"Immortal Snail","id":"C101"},{"name":"Herobrine","id":"C103"},{"name":"TinkyWinky","id":null},{"name":"The Jester","id":"C105"},{"name":"Ghost Girl","id":"C109"},{"name":"Warden","id":"C117"},{"name":"Dog Mimic","id":"C116"},{"name":"Red Mist Apparition","id":"E002"},{"name":"Baldi","id":"E003"},{"name":"Living Shadow","id":"C128"},{"name":"Clockey","id":"C132"},{"name":"sm64.z64","id":"A019"},{"name":"White Face","id":"A018"},{"name":"Tragedy","id":"A003"},{"name":"The Knight of Toren","id":"A011"},{"name":"Try Not To Touch Me","id":"A035"},{"name":"Lisa","id":"A026"},{"name":"Arrival","id":"C085"},{"name":"The Navigator","id":"E006"},{"name":"Tiffany","id":"C071"},{"name":"Face","id":null},{"name":"Ambush","id":"A029"},{"name":"Rush","id":"C040"},{"name":"Pizza Mascots","id":"E005"}];
@@ -140,8 +140,8 @@ function applyMappingToRound(r){
    (r.variant==='DT'?2:r.variant==='EX'?1:3):1;
  r.terrors=[];r.terrorSlots=[];r.unmappedKillerIds=[];
  for(let i=0;i<slots;i++){
-   // 8 Pages: ignore the first two values and take only the third.
-   const raw=r.round==='8 Pages'?numbers[2]:numbers[i],number=Number(raw);
+   // 8 Pages: use only the first value; ignore the second and third.
+   const raw=r.round==='8 Pages'?numbers[0]:numbers[i],number=Number(raw);
    if(raw==null||!/^\d+$/.test(raw)||!Number.isSafeInteger(number)){
      r.terrorSlots.push(null);continue;
    }
