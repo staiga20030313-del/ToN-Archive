@@ -1681,8 +1681,34 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
  background:#52282b!important;border-color:#d08a90!important;
 }
 .archive-header .session-picker-delete[hidden]{display:none!important}
+
+/* 8 Pages: show one detected terror flush-left, duration in the remaining slots. */
+.vrc-live-panel .vrc-eight-pages .vrc-live-card-top{
+  justify-content:flex-start!important;gap:6px!important;
+}
+.vrc-live-panel .vrc-eight-pages .vrc-live-terror-icons{
+  flex:0 0 28px!important;min-width:28px!important;
+  max-width:28px!important;justify-content:flex-start!important;
+}
+.vrc-live-panel .vrc-eight-pages-time{
+  display:inline-flex;align-items:center;justify-content:flex-start;
+  min-width:44px;height:28px;flex:0 0 auto;
+  font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;
+  color:#f4eaf6;white-space:nowrap
+}
+.summary-record .summary-terror-icons:has(.summary-eight-pages-time){
+  justify-content:flex-start!important;align-items:center!important;
+  flex-wrap:nowrap!important;gap:4px!important;
+}
+.summary-eight-pages-time{
+  display:inline-flex;align-items:center;justify-content:flex-start;
+  min-width:0;flex:0 0 auto;
+  padding-left:3px;font-size:17px;font-weight:400;
+  font-variant-numeric:tabular-nums;white-space:nowrap;color:#f4eaf6
+}
+.summary-record.enlarged .summary-eight-pages-time{font-size:26px}
 </style></head><body><main class="shell">
-<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.1.2">v1.1.2</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" hidden aria-hidden="true" tabindex="-1"></select><div class="session-picker" id="sessionPicker"><button type="button" id="sessionPickerToggle" class="field session-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="sessionPickerList"><span id="sessionPickerName"></span><span aria-hidden="true">▾</span></button><div id="sessionPickerList" class="session-picker-list" role="listbox" aria-label="周回を選択" hidden></div></div><button id="addSession">＋ 新規周回</button></div></div></header>
+<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.1.3">v1.1.3</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" hidden aria-hidden="true" tabindex="-1"></select><div class="session-picker" id="sessionPicker"><button type="button" id="sessionPickerToggle" class="field session-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="sessionPickerList"><span id="sessionPickerName"></span><span aria-hidden="true">▾</span></button><div id="sessionPickerList" class="session-picker-list" role="listbox" aria-label="周回を選択" hidden></div></div><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
@@ -2628,6 +2654,15 @@ function summaryRecordIcons(rec){
  }
  // Saved results with no terror selection remain blank, like the desktop version.
  // Unbound names render in their own grid cell above the player counts.
+ if(rec.round==='8 Pages'&&rec.sourceLogKey){
+   // Original 8 Pages only: one left-aligned terror icon followed by
+   // time in the two otherwise empty terror-icon slots.
+   const time=dom('span','summary-eight-pages-time',
+     Number.isFinite(rec.logRoundSeconds)&&rec.logRoundSeconds>=0?
+       Math.floor(rec.logRoundSeconds)+'s':'—');
+   time.title='1ページ目からラウンド終了まで';
+   strip.append(time);
+ }
  strip.title=values.map(id=>terrorDisplayName(id,rec.round,rec.rareChoices?.[id])).join(' / ');
  return strip;
 }
@@ -2803,6 +2838,12 @@ function summaryRow(rec){
    row.append(label);
  }
  const counts=summaryCounts(rec);
+ if(rec.round==='8 Pages'&&rec.sourceLogKey){
+   // Keep original saved records unchanged; only automatic log imports
+   // use the unknown-survivor indicator.
+   const player=rec.players==null?'-':rec.players===-1?'?':String(rec.players);
+   counts.pair='?/'+player;
+ }
  row.append(dom('span','summary-counts',counts.pair));
  const newBox=dom('span','summary-new',counts.newcomer?'New '+counts.newcomer:'');
  row.append(newBox);
@@ -3259,7 +3300,7 @@ function vrcLogRecord(round){
  return {
    id:uid(),round:round.round,variant:round.variant||'',
    terrors:[...round.terrors],map:round.map||'',rareChoices:{},
-   survived:round.estimatedSurvivors??-1,
+   survived:round.round==='8 Pages'?-1:(round.estimatedSurvivors??-1),
    players:round.estimatedPlayers??-1,newPlayers:null,
    sourceLogKey:round.sourceLogKey,logRawTerrors:round.rawKillerIds,
    logRoundSeconds:round.durationSeconds,createdAt:round.start
