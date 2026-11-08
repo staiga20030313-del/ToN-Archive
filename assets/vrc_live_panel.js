@@ -257,6 +257,14 @@ function renderScan({resetScroll=false}={}){
     }
     headline.append(roundSprite);
     if(slots)headline.append(terrorGroup);
+    if(r.round==='8 Pages'){
+      node.classList.add('vrc-eight-pages');
+      const time=document.createElement('span');
+      time.className='vrc-eight-pages-time';
+      time.textContent=Number.isFinite(r.durationSeconds)?Math.floor(r.durationSeconds)+'s':'—';
+      time.title='1ページ目とテラー判明後から終了まで';
+      headline.append(time);
+    }
     const mapRow=document.createElement('span');mapRow.className='vrc-live-map-row';
     const badge=r.map&&typeof mapBadge==='function'?mapBadge(r.map):null;
     if(badge){mapRow.append(badge);mapRow.title=mapName(r.map);}
@@ -269,7 +277,7 @@ function renderScan({resetScroll=false}={}){
     // These are estimates, not certified counts. A dash means unknown.
     const people=document.createElement('span');people.className='vrc-live-people-compact';
     const formatCount=value=>Number.isFinite(value)&&value>=0?String(value):'?';
-    const survived=formatCount(r.estimatedSurvivors);
+    const survived=r.round==='8 Pages'?'?':formatCount(r.estimatedSurvivors);
     const players=formatCount(r.estimatedPlayers);
     const mainCount=document.createElement('strong');mainCount.className='vrc-live-count-ratio';
     mainCount.textContent=survived+'/'+players;
@@ -281,7 +289,8 @@ function renderScan({resetScroll=false}={}){
     const duration=document.createElement('span');duration.className='vrc-live-duration';
     duration.textContent=seconds===null?'—':seconds+'s';
     duration.title=seconds===null?'ラウンド秒数: 未確定':'ラウンド秒数: '+seconds+'秒';
-    people.append(duration);
+    // 8 Pages has its dedicated duration in the space beside the terror icon.
+    if(r.round!=='8 Pages')people.append(duration);
     people.title='推定 生存 / 参加: '+survived+'/'+players;
     const statusLabel=[duplicate?'取込済み':!r.round?'ラウンド未対応':r.ended?'終了':'進行中',r.status,
       '生存フラグ '+(r.survivalFlags??0)+' / 死亡フラグ '+(r.deathFlags??0)].filter(Boolean).join(' · ');
