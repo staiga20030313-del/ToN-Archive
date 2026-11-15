@@ -1722,7 +1722,7 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 .summary-record:not(.text-record) .summary-terror-icons{overflow:visible}
 .archive-workspace .players-compact label[for="newPlayers"]{cursor:context-menu}
 </style></head><body><main class="shell">
-<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.1.6">v1.1.6</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" hidden aria-hidden="true" tabindex="-1"></select><div class="session-picker" id="sessionPicker"><button type="button" id="sessionPickerToggle" class="field session-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="sessionPickerList"><span id="sessionPickerName"></span><span aria-hidden="true">▾</span></button><div id="sessionPickerList" class="session-picker-list" role="listbox" aria-label="周回を選択" hidden></div></div><button id="addSession">＋ 新規周回</button></div></div></header>
+<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.1.7">v1.1.7</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" hidden aria-hidden="true" tabindex="-1"></select><div class="session-picker" id="sessionPicker"><button type="button" id="sessionPickerToggle" class="field session-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="sessionPickerList"><span id="sessionPickerName"></span><span aria-hidden="true">▾</span></button><div id="sessionPickerList" class="session-picker-list" role="listbox" aria-label="周回を選択" hidden></div></div><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
@@ -3079,6 +3079,7 @@ async function summaryExportPng(){
  };
  try{
    if(document.fonts?.ready)await document.fonts.ready;
+   if(document.fonts?.load)await document.fonts.load('700 16px "PixelMplus12"');
    // Export all saved results, without the edit grips or drag placeholders.
    // The same real DOM/CSS layout is used for the on-screen summary.
    if(originalQuery||originalEditMode){
@@ -3089,12 +3090,12 @@ async function summaryExportPng(){
    }
    const boardRect=board.getBoundingClientRect();
    if(boardRect.width<=0)throw Error('成果まとめの表示幅を取得できません');
-   const W=1080,pad=16,headerH=54;
-   // Rectangle coordinates already include the responsive layout, CSS zoom,
-   // large entries and Unbound. One uniform ratio maps them to PNG pixels.
+   // Use the actual rendered geometry; never reflow groups for export.
+   // A generous raster size avoids shrinking the original pixel art.
+   const pad=20,headerH=58;
+   const W=Math.max(1080,Math.min(2400,Math.ceil(boardRect.width*1.7)+2*pad));
    const ratio=(W-2*pad)/boardRect.width;
-   // Computed font sizes are unzoomed CSS pixels; the DOM rectangles
-   // already contain the page's CSS zoom factor.
+   // Computed styles are CSS pixels, while DOM rectangles include CSS zoom.
    const fontRatio=ratio*boardRect.width/Math.max(1,board.offsetWidth);
    const point=node=>{
      const rect=node.getBoundingClientRect();
@@ -3113,14 +3114,17 @@ async function summaryExportPng(){
    const g=output.getContext('2d');
    if(!g)throw Error('PNG描画用キャンバスを初期化できません');
    const bodyStyle=getComputedStyle(document.body);
-   g.fillStyle=bodyStyle.backgroundColor||'#000000';
+   const panelStyle=getComputedStyle(board.closest('.records-panel')||board);
+   // Summary panel is opaque, while each group is transparent. Matching the
+   // panel surface avoids mismatched dark/purple rectangles in exported PNGs.
+   const exportBg=panelStyle.backgroundColor&&!['transparent','rgba(0, 0, 0, 0)'].includes(panelStyle.backgroundColor)?
+     panelStyle.backgroundColor:(bodyStyle.backgroundColor||'#211a2a');
+   g.fillStyle=exportBg;
    g.fillRect(0,0,W,H);
-   g.fillStyle=getComputedStyle(board).getPropertyValue('--summary-accent').trim()||'#999';
-   g.fillRect(0,0,4,headerH);
    g.fillStyle=bodyStyle.color||'#e7e7e7';
-   g.font='700 22px "PixelMplus12",sans-serif';
+   g.font='700 '+(22*fontRatio)+'px "PixelMplus12",sans-serif';
    g.textAlign='left';g.textBaseline='middle';
-   g.fillText(session.name||'ToN Results',22,headerH/2,W-44);
+   g.fillText(session.name||'ToN Results',pad,headerH/2);
    // Pseudo-element borders match the interrupted frame and Highlights
    // double border. Their inset is resolved from the same CSS as the page.
    const paintFrame=(group,pseudo)=>{
@@ -3160,15 +3164,17 @@ async function summaryExportPng(){
      const rightPadding=(parseFloat(style.paddingRight)||0)*fontRatio;
      const width=Math.max(0,rect.w-leftPadding-rightPadding);
      const x=g.textAlign==='center'?rect.x+rect.w/2:g.textAlign==='right'?rect.x+rect.w-rightPadding:rect.x+leftPadding;
-     let text=node.textContent;
-     if(style.textOverflow==='ellipsis'&&g.measureText(text).width>width){
-       while(text.length>1&&g.measureText(text+'…').width>width)text=text.slice(0,-1);
-       text+='…';
+     let label=node.textContent;
+     // Canvas fillText(text, x, y, maxWidth) horizontally compresses glyphs,
+     // unlike CSS overflow. Render at original font width and clip instead.
+     if(style.textOverflow==='ellipsis'&&g.measureText(label).width>width){
+       while(label.length>1&&g.measureText(label+'…').width>width)label=label.slice(0,-1);
+       label+='…';
      }
-     if(style.overflowX==='hidden'||style.overflow==='hidden'){
+     if(style.overflowX==='hidden'||style.overflow==='hidden'||style.textOverflow==='ellipsis'){
        g.beginPath();g.rect(rect.x,rect.y,rect.w,rect.h);g.clip();
      }
-     if(width>0)g.fillText(text,x,rect.y+rect.h/2,width);
+     if(width>0)g.fillText(label,x,rect.y+rect.h/2);
      g.restore();
    };
    const paintCanvas=node=>{
@@ -3176,6 +3182,7 @@ async function summaryExportPng(){
      const rect=point(node);
      if(rect.w<=0||rect.h<=0)return;
      g.save();g.imageSmoothingEnabled=false;
+     // Original canvas pixel art is used directly, not re-drawn from IDs.
      // The enlarged map container can clip a badge on narrow screens.
      const parent=node.parentElement;
      if(parent&&getComputedStyle(parent).overflowX==='hidden'){
@@ -3186,9 +3193,12 @@ async function summaryExportPng(){
      g.restore();
    };
    for(const group of groups){
-     const area=point(group);
-     g.fillStyle=getComputedStyle(group).backgroundColor||'#080808';
-     g.fillRect(area.x,area.y,area.w,area.h);
+     const area=point(group),style=getComputedStyle(group);
+     // Transparent groups must show the parent panel color underneath.
+     if(style.backgroundColor&&style.backgroundColor!=='transparent'&&
+        style.backgroundColor!=='rgba(0, 0, 0, 0)'){
+       g.fillStyle=style.backgroundColor;g.fillRect(area.x,area.y,area.w,area.h);
+     }
      paintFrame(group,'::before');
      if(group.classList.contains('highlights'))paintFrame(group,'::after');
      const sprite=group.querySelector('.summary-group-head .round-sprite');
