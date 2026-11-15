@@ -1725,19 +1725,17 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
 /* Only 8 Pages has a fourth, independently editable time input. */
 .archive-workspace .entry-panel .eight-pages-only{display:none!important}
 .archive-workspace .entry-panel.eight-pages-form .eight-pages-only{
- display:flex!important;flex:1.35 0 0!important;min-width:64px!important;
+ display:flex!important;flex:1 0 0!important;min-width:0!important;
 }
 .archive-workspace .entry-panel.eight-pages-form .players-compact{
  position:relative;z-index:3;width:max(100%,276px)!important;max-width:none!important;
  min-width:276px!important;gap:5px!important;padding:5px!important;
- background:#211a2a;
 }
 .archive-workspace .entry-panel.eight-pages-form .players-compact .control{
  flex:1 0 0!important;min-width:0!important;
 }
 .archive-workspace .entry-panel.eight-pages-form #roundSeconds{
- height:25px!important;min-width:0!important;width:100%!important;
- padding:2px!important;text-align:center;font-size:12px;
+ height:25px!important;min-width:0!important;
 }
 .archive-workspace .entry-panel.eight-pages-form .players-compact label{
  font-size:9px!important;letter-spacing:-.03em;
@@ -1785,7 +1783,7 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
  flex:0 1 auto!important;
 }
 </style></head><body><main class="shell">
-<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.1.8">v1.1.8</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" hidden aria-hidden="true" tabindex="-1"></select><div class="session-picker" id="sessionPicker"><button type="button" id="sessionPickerToggle" class="field session-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="sessionPickerList"><span id="sessionPickerName"></span><span aria-hidden="true">▾</span></button><div id="sessionPickerList" class="session-picker-list" role="listbox" aria-label="周回を選択" hidden></div></div><button id="addSession">＋ 新規周回</button></div></div></header>
+<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.1.9">v1.1.9</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" hidden aria-hidden="true" tabindex="-1"></select><div class="session-picker" id="sessionPicker"><button type="button" id="sessionPickerToggle" class="field session-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="sessionPickerList"><span id="sessionPickerName"></span><span aria-hidden="true">▾</span></button><div id="sessionPickerList" class="session-picker-list" role="listbox" aria-label="周回を選択" hidden></div></div><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
@@ -1797,7 +1795,7 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
    <div class="control"><label for="survived">生存</label><div class="count-stepper"><input class="field" id="survived" inputmode="text" autocomplete="off" maxlength="3" placeholder="-" type="text"/><div class="count-arrows"><button type="button" class="count-step" data-delta="1" tabindex="-1" aria-label="生存を増やす" title="生存 +1"></button><button type="button" class="count-step" data-delta="-1" tabindex="-1" aria-label="生存を減らす" title="生存 -1"></button></div></div></div>
    <div class="control"><label for="players">参加</label><div class="count-stepper"><input class="field" id="players" inputmode="text" autocomplete="off" maxlength="3" placeholder="-" type="text"/><div class="count-arrows"><button type="button" class="count-step" data-delta="1" tabindex="-1" aria-label="参加を増やす" title="参加 +1"></button><button type="button" class="count-step" data-delta="-1" tabindex="-1" aria-label="参加を減らす" title="参加 -1"></button></div></div></div>
    <div class="control"><label for="newPlayers">新規生存</label><div class="count-stepper"><input class="field" id="newPlayers" inputmode="text" autocomplete="off" maxlength="3" placeholder="-" type="text"/><div class="count-arrows"><button type="button" class="count-step" data-delta="1" tabindex="-1" aria-label="新規生存を増やす" title="新規生存 +1"></button><button type="button" class="count-step" data-delta="-1" tabindex="-1" aria-label="新規生存を減らす" title="新規生存 -1"></button></div></div></div>
-   <div class="control eight-pages-only"><label for="roundSeconds">ラウンド秒数</label><input class="field" id="roundSeconds" type="text" inputmode="text" maxlength="7" autocomplete="off" placeholder="○s" aria-label="8 Pagesのラウンド秒数"/></div>
+   <div class="control eight-pages-only"><label for="roundSeconds">ラウンド秒数</label><div class="count-stepper"><input class="field" id="roundSeconds" type="text" inputmode="text" maxlength="7" autocomplete="off" placeholder="-" aria-label="8 Pagesのラウンド秒数"/><div class="count-arrows"><button type="button" class="count-step" data-delta="1" tabindex="-1" aria-label="ラウンド秒数を増やす" title="ラウンド秒数 +1"></button><button type="button" class="count-step" data-delta="-1" tabindex="-1" aria-label="ラウンド秒数を減らす" title="ラウンド秒数 -1"></button></div></div></div>
  </div></div>
  <div class="control"><label for="mapButton">マップ</label><button class="pick" id="mapButton">マップを選択</button></div>
  <div class="entry-actions"><button class="primary" id="addEntry">＋ 成果まとめに追加</button><button hidden="" id="cancelEdit">編集を解除</button></div>
@@ -3348,12 +3346,45 @@ $('roundButton').onclick=()=>choose('round');$('terrorButton').onclick=()=>choos
 }
 const newPlayersControl=$('newPlayers').closest('.control');
 newPlayersControl.addEventListener('contextmenu',toggleNewPlayersMode);
-$('roundSeconds').addEventListener('input',()=>{form.roundSeconds=$('roundSeconds').value.trim()});
-$('roundSeconds').addEventListener('blur',()=>{
- const input=$('roundSeconds'),value=parseRoundSeconds(input.value);
- input.classList.toggle('count-invalid',Number.isNaN(value));
- input.setAttribute('aria-invalid',Number.isNaN(value)?'true':'false');
+const roundSecondsInput=$('roundSeconds');
+const roundSecondsStepper=roundSecondsInput.closest('.count-stepper');
+let lastValidRoundSeconds='';
+function commitRoundSeconds(){
+ const value=parseRoundSeconds(roundSecondsInput.value);
+ if(Number.isNaN(value))roundSecondsInput.value=lastValidRoundSeconds||'-';
+ else if(!roundSecondsInput.value.trim())roundSecondsInput.value='-';
+ form.roundSeconds=roundSecondsInput.value.trim();
+ roundSecondsInput.classList.toggle('count-invalid',false);
+ roundSecondsInput.setAttribute('aria-invalid','false');
+}
+function stepRoundSeconds(delta){
+ const currentValue=parseRoundSeconds(roundSecondsInput.value);
+ const base=Number.isNaN(currentValue)||currentValue===null?0:currentValue;
+ roundSecondsInput.value=String(Math.max(-99999,Math.min(99999,base+(delta>0?1:-1))));
+ form.roundSeconds=roundSecondsInput.value;
+ lastValidRoundSeconds=roundSecondsInput.value;
+}
+roundSecondsInput.addEventListener('input',()=>{
+ form.roundSeconds=roundSecondsInput.value.trim();
+ const invalid=Number.isNaN(parseRoundSeconds(form.roundSeconds));
+ roundSecondsInput.classList.toggle('count-invalid',invalid);
+ roundSecondsInput.setAttribute('aria-invalid',String(invalid));
+ if(!invalid)lastValidRoundSeconds=form.roundSeconds;
 });
+roundSecondsInput.addEventListener('focus',()=>roundSecondsInput.select());
+roundSecondsInput.addEventListener('blur',commitRoundSeconds);
+roundSecondsInput.addEventListener('keydown',e=>{
+ if(e.key==='ArrowUp'||e.key==='ArrowDown'){
+   e.preventDefault();stepRoundSeconds(e.key==='ArrowUp'?1:-1);
+ }else if(e.key==='Enter'){e.preventDefault();commitRoundSeconds();}
+});
+roundSecondsStepper.addEventListener('wheel',e=>{
+ if(!e.deltaY)return;
+ e.preventDefault();stepRoundSeconds(e.deltaY<0?1:-1);
+},{passive:false});
+for(const button of roundSecondsStepper.querySelectorAll('.count-step')){
+ button.addEventListener('click',()=>stepRoundSeconds(Number(button.dataset.delta)));
+}
 syncNewPlayersMode();
 $('addEntry').onclick=commit;$('cancelEdit').onclick=clearForm;$('search').oninput=renderRecords;
 $('addSession').onclick=()=>{let s={id:uid(),name:'周回 '+(state.sessions.length+1),records:[]};state.sessions.push(s);state.active=s.id;persist();clearForm();renderSessions()};$('deleteSession').onclick=()=>deleteSessionById(state.active);$('session').onchange=e=>{if(!state.sessions.some(s=>s.id===e.target.value))return;state.active=e.target.value;clearForm();persist();renderSessions()};$('sessionName').onchange=e=>{let s=e.target.value.trim();if(!s){e.target.value=current().name;return}current().name=s;persist();renderSessions()};$('listView').onclick=()=>{state.mode='text';persist();renderRecords()};$('iconView').onclick=()=>{state.mode='icon';persist();renderRecords()};
