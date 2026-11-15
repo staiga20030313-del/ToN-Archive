@@ -1707,8 +1707,22 @@ body,button,input,select,textarea,.panel,.selector,.record,.summary-group,.summa
   font-variant-numeric:tabular-nums;white-space:nowrap;color:#f4eaf6
 }
 .summary-record.enlarged .summary-eight-pages-time{font-size:26px}
+
+/* Center 8 Pages duration in the two unused terror slots. */
+.summary-record .summary-terror-icons:has(.summary-eight-pages-time){gap:12px!important}
+.summary-record .summary-eight-pages-time{
+  min-width:60px!important;min-height:32px;
+  padding-left:0!important;justify-content:center!important;text-align:center!important;
+}
+/* Ensure result icons begin to the right of their round header artwork. */
+.summary-record:not(.text-record){margin-left:47px!important;width:calc(100% - 51px)!important}
+.summary-record:not(.text-record):has(.summary-terror-icons canvas:nth-of-type(3)){
+  grid-template-columns:minmax(100px,1fr) minmax(49px,56px) minmax(41px,50px) minmax(100px,35%)!important;
+}
+.summary-record:not(.text-record) .summary-terror-icons{overflow:visible}
+.archive-workspace .players-compact label[for="newPlayers"]{cursor:context-menu}
 </style></head><body><main class="shell">
-<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.1.5">v1.1.5</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" hidden aria-hidden="true" tabindex="-1"></select><div class="session-picker" id="sessionPicker"><button type="button" id="sessionPickerToggle" class="field session-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="sessionPickerList"><span id="sessionPickerName"></span><span aria-hidden="true">▾</span></button><div id="sessionPickerList" class="session-picker-list" role="listbox" aria-label="周回を選択" hidden></div></div><button id="addSession">＋ 新規周回</button></div></div></header>
+<header class="panel archive-header"><div class="headline"><div class="entry-heading"><span class="app-name" aria-label="ToN Archive">ToN Archive</span><!-- Bump this number with each published UI change. --><span class="app-version" aria-label="バージョン 1.1.6">v1.1.6</span></div><div class="session-row"><label for="sessionName">周回名</label><input aria-label="周回名" class="field runinput" id="sessionName" placeholder="周回名"/><select aria-label="周回を選択" class="field" id="session" hidden aria-hidden="true" tabindex="-1"></select><div class="session-picker" id="sessionPicker"><button type="button" id="sessionPickerToggle" class="field session-picker-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="sessionPickerList"><span id="sessionPickerName"></span><span aria-hidden="true">▾</span></button><div id="sessionPickerList" class="session-picker-list" role="listbox" aria-label="周回を選択" hidden></div></div><button id="addSession">＋ 新規周回</button></div></div></header>
 <div class="archive-workspace">
 <section class="panel entry-panel" aria-label="成果の入力">
 <div class="entry-grid">
@@ -1806,7 +1820,7 @@ function roundVariantDisplayName(round,variant=''){
 const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random();
 const initial=()=>({sessions:[{id:uid(),name:'周回 1',records:[]}],active:null,mode:'icon'});
 let state;try{state=JSON.parse(localStorage.getItem(KEY))}catch{state=null}if(!state||!Array.isArray(state.sessions)||!state.sessions.length)state=initial();if(!state.active||!state.sessions.some(s=>s.id===state.active))state.active=state.sessions[0].id;
-let form={round:'',variant:'',terrors:[],rareChoices:{},map:'',survived:'',players:'',newPlayers:''}, editing=null, selector=null, expandedRound=null, terrorTab='Classic', toastTimer;
+let form={round:'',variant:'',terrors:[],rareChoices:{},map:'',survived:'',players:'',newPlayers:'',newPlayersMode:'new'}, editing=null, selector=null, expandedRound=null, terrorTab='Classic', toastTimer;
 const $=id=>document.getElementById(id);const current=()=>state.sessions.find(x=>x.id===state.active);
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(state));$('storageLabel')&&($('storageLabel').textContent='このブラウザ内に自動保存 ✓')}catch{$('storageLabel')&&($('storageLabel').textContent='保存に失敗 · JSONで書き出してね');notify('保存できません。容量またはブラウザ設定を確認してください')}}
 function notify(m){const e=$('toast');e.textContent=m;e.style.display='block';clearTimeout(toastTimer);toastTimer=setTimeout(()=>e.style.display='none',3200)}
@@ -2258,6 +2272,7 @@ function updateForm(){
    $(id).value=form[id]===-1?'?':form[id]??'';
    playerStepperLastValid[id]=$(id).value;
  }
+ syncNewPlayersMode();
  playerCountValidation(false);
  $('addEntry').textContent=editing?'変更を保存':'＋ 成果まとめに追加';
  $('cancelEdit').hidden=!editing;
@@ -2424,10 +2439,39 @@ function fitStandaloneTerrorGrid(){
  popup.style.maxHeight=mustScroll?Math.max(170,available)+'px':'none';
  popup.style.overflow=mustScroll?'auto':'visible';
 }
-function clearForm(){editing=null;form={round:'',variant:'',terrors:[],rareChoices:{},map:'',survived:'',players:'',newPlayers:''};updateForm()}
+function clearForm(){editing=null;form={round:'',variant:'',terrors:[],rareChoices:{},map:'',survived:'',players:'',newPlayers:'',newPlayersMode:'new'};updateForm()}
 
 /* Match desktop PlayerValues: blank=null, ?=-1, known numbers 0..22.
    Invalid combinations are visibly red, but unknown values impose no constraint. */
+function parseRoundSeconds(input){
+ const value=String(input??'').trim();
+ if(value===''||value==='-'||value==='?'||value==='？')return null;
+ const m=/^(-?\d{1,5})s?$/i.exec(value);
+ if(!m)return NaN;
+ const n=Number(m[1]);return Number.isSafeInteger(n)&&Math.abs(n)<=99999?n:NaN;
+}
+function parseCountField(id,value){
+ return id==='newPlayers'&&form.newPlayersMode==='time'?parseRoundSeconds(value):parsePlayerValue(value);
+}
+function syncNewPlayersMode(){
+ const time=form.newPlayersMode==='time';
+ const label=document.querySelector('label[for="newPlayers"]');
+ if(label){label.textContent=time?'ラウンド秒数':'新規生存';label.title='右クリックで切替'}
+ const input=$('newPlayers');
+ input.maxLength=time?7:3;
+ input.placeholder=time?'0s / -0s':'-';
+ input.title=time?'秒数（例：59s、-59s）。右クリックで新規生存に切替':'右クリックでラウンド秒数に切替';
+ const control=input.closest('.control');
+ if(control)for(const button of control.querySelectorAll('.count-step')){
+   button.setAttribute('aria-label',(time?'ラウンド秒数':'新規生存')+(Number(button.dataset.delta)>0?'を増やす':'を減らす'));
+ }
+}
+function toggleNewPlayersMode(event){
+ event.preventDefault();
+ form.newPlayersMode=form.newPlayersMode==='time'?'new':'time';
+ form.newPlayers='';$('newPlayers').value='';playerStepperLastValid.newPlayers='';
+ syncNewPlayersMode();readCounts();
+}
 function parsePlayerValue(input){
  const v=String(input??'').trim();
  if(v===''||v==='-')return null;
@@ -2440,30 +2484,36 @@ function parsePlayerValue(input){
 /* .NET NumberStepper order: - (unset) -> ? (unknown) -> 0..22, no wrapping. */
 const playerStepperLastValid={survived:'',players:'',newPlayers:''};
 function stepPlayerCount(id,delta){
- const input=$(id),parsed=parsePlayerValue(input.value);
- const last=parsePlayerValue(playerStepperLastValid[id]);
+ const input=$(id),parsed=parseCountField(id,input.value);
+ const last=parseCountField(id,playerStepperLastValid[id]);
  const base=Number.isNaN(parsed)?last:parsed;
- const index=base===null||Number.isNaN(base)?-2:base;
- const next=Math.max(-2,Math.min(22,index+(delta>0?1:-1)));
- input.value=next===-2?'-':next===-1?'?':String(next);
+ if(id==='newPlayers'&&form.newPlayersMode==='time'){
+   input.value=String(Math.max(-99999,Math.min(99999,(base===null||Number.isNaN(base)?0:base)+(delta>0?1:-1))));
+ }else{
+   const index=base===null||Number.isNaN(base)?-2:base;
+   const next=Math.max(-2,Math.min(22,index+(delta>0?1:-1)));
+   input.value=next===-2?'-':next===-1?'?':String(next);
+ }
  readCounts();
 }
 function commitPlayerCount(id){
  const input=$(id);
- if(Number.isNaN(parsePlayerValue(input.value)))input.value=playerStepperLastValid[id]||'-';
+ if(Number.isNaN(parseCountField(id,input.value)))input.value=playerStepperLastValid[id]||'-';
  else if(!input.value.trim())input.value='-';
  readCounts();
 }
 
 function playerCountValidation(showNotice=false){
- const fields=['survived','players','newPlayers'],values=fields.map(k=>parsePlayerValue(form[k]));
+ const fields=['survived','players','newPlayers'],values=fields.map(k=>parseCountField(k,form[k]));
  const [survived,players,newcomers]=values;
  const errors=fields.map(()=>false);
  values.forEach((value,index)=>{if(Number.isNaN(value))errors[index]=true});
  const known=v=>Number.isInteger(v)&&v>=0;
  if(known(survived)&&known(players)&&survived>players){errors[0]=true;errors[1]=true}
- if(known(newcomers)&&known(survived)&&newcomers>survived){errors[0]=true;errors[2]=true}
- if(known(newcomers)&&known(players)&&newcomers>players){errors[1]=true;errors[2]=true}
+ if(form.newPlayersMode!=='time'){
+   if(known(newcomers)&&known(survived)&&newcomers>survived){errors[0]=true;errors[2]=true}
+   if(known(newcomers)&&known(players)&&newcomers>players){errors[1]=true;errors[2]=true}
+ }
  const valid=!errors.some(Boolean),box=document.querySelector('.players-compact');
  if(box){
    box.classList.toggle('invalid',!valid);
@@ -2474,13 +2524,13 @@ function playerCountValidation(showNotice=false){
    element.classList.toggle('count-invalid',errors[i]);
    element.setAttribute('aria-invalid',errors[i]?'true':'false');
  }
- if(!valid&&showNotice)notify('人数を確認してください（0～22、? または空欄）。新規生存 ≤ 生存 ≤ 参加');
+ if(!valid&&showNotice)notify(form.newPlayersMode==='time'?'秒数は -99999～99999 で入力してください（例：59s、-59s）':'人数を確認してください（0～22、? または空欄）。新規生存 ≤ 生存 ≤ 参加');
  return valid?values:null;
 }
 function readCounts(){
  for(const id of ['survived','players','newPlayers']){
    form[id]=$(id).value.trim();
-   if(!Number.isNaN(parsePlayerValue(form[id])))playerStepperLastValid[id]=form[id];
+   if(!Number.isNaN(parseCountField(id,form[id])))playerStepperLastValid[id]=form[id];
  }
  playerCountValidation(false);
 }
@@ -2522,7 +2572,8 @@ function commit(){
  const record={...(oldRecord||{}),id:editing||uid(),round:form.round,
    variant:form.variant,terrors:[...form.terrors],
    map:mapId(form.map),rareChoices:{...form.rareChoices},
-   survived,players,newPlayers
+   survived,players,newPlayers,
+   newPlayersMode:form.newPlayersMode==='time'?'time':'new'
  };
  const records=current().records;
  if(editing){
@@ -2531,7 +2582,7 @@ function commit(){
  }else records.push(record);
  persist();clearForm();renderRecords();notify('成果を保存しました');
 }
-function edit(rec){editing=rec.id;form={round:rec.round,variant:rec.variant||'',terrors:Array.isArray(rec.terrors)?[...rec.terrors]:[],map:rec.map||'',rareChoices:{...(rec.rareChoices||{})},survived:rec.survived??'',players:rec.players??'',newPlayers:rec.newPlayers??''};updateForm();window.scrollTo({top:100,behavior:'smooth'})}
+function edit(rec){editing=rec.id;form={round:rec.round,variant:rec.variant||'',terrors:Array.isArray(rec.terrors)?[...rec.terrors]:[],map:rec.map||'',rareChoices:{...(rec.rareChoices||{})},survived:rec.survived??'',players:rec.players??'',newPlayers:rec.newPlayers??'',newPlayersMode:rec.newPlayersMode==='time'?'time':'new'};updateForm();window.scrollTo({top:100,behavior:'smooth'})}
 function remove(id){current().records=current().records.filter(r=>r.id!==id);if(editing===id)clearForm();persist();renderRecords()}
 
 /* RESULTS CANVAS v2 — mirrors the native RecordsCanvas data model and interactions.
@@ -2640,9 +2691,11 @@ function summaryGroupTitle(group){
 }
 function summaryCounts(rec){
  const show=n=>n===-1?'?':n==null?'':String(n);
+ const time=rec.newPlayersMode==='time';
  return {
    pair:rec.survived==null&&rec.players==null?'':(show(rec.survived)||'-')+'/'+(show(rec.players)||'-'),
-   newcomer:rec.newPlayers==null?'':show(rec.newPlayers)
+   newcomer:rec.newPlayers==null?'':time?String(rec.newPlayers)+'s':show(rec.newPlayers),
+   time
  };
 }
 function summaryRecordIcons(rec){
@@ -2845,7 +2898,7 @@ function summaryRow(rec){
    counts.pair='?/'+player;
  }
  row.append(dom('span','summary-counts',counts.pair));
- const newBox=dom('span','summary-new',counts.newcomer?'New '+counts.newcomer:'');
+ const newBox=dom('span','summary-new',counts.newcomer?(counts.time?counts.newcomer:'New '+counts.newcomer):'');
  row.append(newBox);
  const map=dom('span','summary-map');
  if(rec.map){const badge=mapBadge(rec.map);if(badge)map.append(badge);else map.textContent=mapName(rec.map)}
@@ -3199,6 +3252,9 @@ $('roundButton').onclick=()=>choose('round');$('terrorButton').onclick=()=>choos
  for(const button of stepper.querySelectorAll('.count-step'))
    button.addEventListener('click',()=>stepPlayerCount(id,Number(button.dataset.delta)));
 }
+const newPlayersControl=$('newPlayers').closest('.control');
+newPlayersControl.addEventListener('contextmenu',toggleNewPlayersMode);
+syncNewPlayersMode();
 $('addEntry').onclick=commit;$('cancelEdit').onclick=clearForm;$('search').oninput=renderRecords;
 $('addSession').onclick=()=>{let s={id:uid(),name:'周回 '+(state.sessions.length+1),records:[]};state.sessions.push(s);state.active=s.id;persist();clearForm();renderSessions()};$('deleteSession').onclick=()=>deleteSessionById(state.active);$('session').onchange=e=>{if(!state.sessions.some(s=>s.id===e.target.value))return;state.active=e.target.value;clearForm();persist();renderSessions()};$('sessionName').onchange=e=>{let s=e.target.value.trim();if(!s){e.target.value=current().name;return}current().name=s;persist();renderSessions()};$('listView').onclick=()=>{state.mode='text';persist();renderRecords()};$('iconView').onclick=()=>{state.mode='icon';persist();renderRecords()};
 
@@ -3256,7 +3312,7 @@ function toWebFromNative(raw){
        id:String(record.Id||uid()),round,variant,terrors:ids,
        map:mapId(map)||'',rareChoices,
        survived:record.Survived??null,players:record.Players??null,
-       newPlayers:record.NewSurvivors??null,
+       newPlayers:record.NewSurvivors??null,newPlayersMode:'new',
        summaryUppercase:!!record.SummaryUppercase,
        summaryBold:!!record.SummaryBold,summaryPinned:!!record.SummaryPinned,
        createdAt:record.CreatedAt||null,
@@ -3302,7 +3358,9 @@ function vrcLogRecord(round){
    id:uid(),round:round.round,variant:round.variant||'',
    terrors:[...round.terrors],map:round.map||'',rareChoices:{},
    survived:round.round==='8 Pages'?-1:(round.estimatedSurvivors??-1),
-   players:round.estimatedPlayers??-1,newPlayers:null,
+   players:round.estimatedPlayers??-1,
+   newPlayers:Number.isFinite(round.durationSeconds)?Math.floor(round.durationSeconds):null,
+   newPlayersMode:'time',
    sourceLogKey:round.sourceLogKey,logRawTerrors:round.rawKillerIds,
    logRoundSeconds:round.durationSeconds,createdAt:round.start
  };
